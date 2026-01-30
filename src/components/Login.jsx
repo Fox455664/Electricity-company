@@ -74,7 +74,7 @@ const Login = () => {
         <div style={{ marginTop: '30px', padding: '15px', backgroundColor: '#f0f4ff', borderRadius: '6px', fontSize: '12px' }}>
           <p style={{ marginBottom: '8px' }}>بيانات الاختبار:</p>
           <p>👤 admin / admin2025</p>
-          <p>👷 inspector1 / pass123</p>
+          <p>👷 fox / 12 </p>
         </div>
       </div>
     </div>
