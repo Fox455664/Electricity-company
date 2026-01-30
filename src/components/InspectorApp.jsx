@@ -52,6 +52,7 @@ const InspectorApp = () => {
   const navigate = useNavigate()
   const sigPad = useRef(null)
   const topRef = useRef(null)
+  const sigContainerRef = useRef(null) // مرجع لمكان التوقيع عشان السكرول
 
   // States
   const [user, setUser] = useState(null)
@@ -203,7 +204,15 @@ const InspectorApp = () => {
 
   const handleSubmit = async () => {
     if (!geo) { alert('⚠️ يرجى تحديد الموقع أولاً'); topRef.current?.scrollIntoView({ behavior: 'smooth' }); return; }
-    if (!formData.contractor) { alert('⚠️ يرجى كتابة اسم المقاول'); return; }
+    if (!formData.contractor) { alert('⚠️ يرجى كتابة اسم المقاول'); topRef.current?.scrollIntoView({ behavior: 'smooth' }); return; }
+    
+    // --- التحقق من توقيع المستلم (إجباري) ---
+    if (sigPad.current.isEmpty()) {
+        alert('⚠️ يجب توقيع المستلم قبل إرسال التقرير');
+        // تمرير الشاشة تلقائياً لمنطقة التوقيع
+        sigContainerRef.current?.scrollIntoView({ behavior: 'smooth' });
+        return;
+    }
 
     setLoading(true)
     setBtnText('جاري ضغط الصور والمعالجة...')
@@ -216,7 +225,7 @@ const InspectorApp = () => {
         timestamp: new Date().toLocaleString('ar-SA'),
         ...formData,
         google_maps_link: geo,
-        signature_image: sigPad.current.isEmpty() ? null : sigPad.current.toDataURL('image/png', 0.5),
+        signature_image: sigPad.current.toDataURL('image/png', 0.5), // التوقيع مضمون موجود الآن
         answers: {},
         violations: []
       }
@@ -241,10 +250,6 @@ const InspectorApp = () => {
             }
         }
 
-        // إضافة البند إلى قائمة الملاحظات/المخالفات في حالة:
-        // 1. الإجابة "لا"
-        // 2. يوجد ملاحظة نصية
-        // 3. يوجد صور (حتى لو الإجابة نعم)
         if (val === 'لا' || note || processedPhotos.length > 0) {
           payload.violations.push({
             q: qList[i],
@@ -283,9 +288,25 @@ const InspectorApp = () => {
     <div className="app-container">
       <style>{styles}</style>
       
+      {/* Header */}
       <div className="premium-header" ref={topRef}>
         <div className="inspector-badge"><i className="fa-solid fa-user-shield"></i><span>{user.username}</span></div>
-        <button onClick={() => { sessionStorage.clear(); navigate('/'); }} style={{background:'none', border:'none', color:'rgba(255,255,255,0.7)', cursor:'pointer', fontSize:'18px'}}><i className="fa-solid fa-arrow-right-from-bracket"></i></button>
+        
+        <div style={{display:'flex', gap:'15px', alignItems:'center'}}>
+            
+            {/* زر العودة للمدير (يظهر فقط إذا كان المستخدم أدمن) */}
+            {user.role === 'admin' && (
+                <button 
+                    onClick={() => navigate('/admin')} 
+                    style={{background:'rgba(255,255,255,0.2)', border:'1px solid rgba(255,255,255,0.4)', borderRadius:'8px', color:'white', padding:'5px 10px', cursor:'pointer', fontSize:'14px'}}
+                    title="عودة للوحة التحكم"
+                >
+                    <i className="fa-solid fa-chart-line"></i> مدير
+                </button>
+            )}
+
+            <button onClick={() => { sessionStorage.clear(); navigate('/'); }} style={{background:'none', border:'none', color:'rgba(255,255,255,0.7)', cursor:'pointer', fontSize:'18px'}}><i className="fa-solid fa-arrow-right-from-bracket"></i></button>
+        </div>
       </div>
 
       <div style={{padding: '20px 15px'}}>
@@ -353,8 +374,11 @@ const InspectorApp = () => {
           )
         })}
 
-        <div className="premium-card">
-          <div className="section-title"><i className="fa-solid fa-file-signature"></i>توقيع المستلم</div>
+        <div className="premium-card" ref={sigContainerRef}>
+          <div className="section-title">
+            <i className="fa-solid fa-file-signature"></i>
+            توقيع المستلم <span style={{color:'red', fontSize:'12px', marginRight:'5px'}}>(إجباري)</span>
+          </div>
           <div className="sig-wrapper" style={{border: '2px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden'}}>
             <SignatureCanvas ref={sigPad} canvasProps={{ className: 'sig-canvas' }} backgroundColor="rgb(255, 255, 255)" />
           </div>
