@@ -256,7 +256,7 @@ const Login = () => {
         </form>
 
         <div className="footer-info">
-          SEC Safety Inspection System © 2025
+          SEC Safety Inspection System © 2026
         </div>
 
       </div> {/* إغلاق login-card */}
