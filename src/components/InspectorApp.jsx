@@ -3,11 +3,11 @@ import { useNavigate } from 'react-router-dom'
 import SignatureCanvas from 'react-signature-canvas'
 import { supabase } from '../supabaseClient'
 
-// القائمة المعدلة
+// القائمة المعدلة (تم تحديث البند 3 وحذف البنود السابقة)
 const qList = [
     "تصريح العمل الأساسي والثانوي متواجد بموقع العمل", 
     "اجتماع ما قبل البدء بالعمل متواجد بموقع العمل", 
-    "نموذج فريق العمل متواجد بموقع العمل (مذكور رقم المقايسة – وصف العمل – رقم التصريح – توقيع مشرف الكهرب والشركة)", 
+    "نموذج فريق العمل متواجد بموقع العمل (مذكور رقم المقايسة - وصف العمل - رقم التصريح - توقيع مسئول شركة الكهرباء)", 
     "إجراءات العمل الآمن وتقييم المخاطر وتوفرها بلغات مناسبة", 
     "إلمام المستلم وفريق العمل بإجراءات العمل الآمن وتقييم المخاطر للمهمة", 
     "ملاحظات", 
@@ -49,7 +49,6 @@ const qList = [
 
 const InspectorApp = () => {
   const navigate = useNavigate()
-  const videoRef = useRef(null)
   const sigPad = useRef(null)
   const topRef = useRef(null)
 
@@ -70,10 +69,8 @@ const InspectorApp = () => {
     date: new Date().toISOString().split('T')[0]
   })
   
-  // Verification
+  // Verification (GPS Only now)
   const [geo, setGeo] = useState(null)
-  const [photo, setPhoto] = useState(null)
-  const [isCamOpen, setIsCamOpen] = useState(false)
 
   // Answers Store
   const [answers, setAnswers] = useState({})
@@ -95,12 +92,15 @@ const InspectorApp = () => {
     body {
       background-color: var(--bg-color);
       font-family: 'Cairo', sans-serif;
+      margin: 0;
+      padding: 0;
     }
 
     .app-container {
-      max-width: 800px;
+      width: 100%;
+      max-width: 900px; /* Increased width for desktop */
       margin: 0 auto;
-      padding-bottom: 100px;
+      padding-bottom: 120px;
     }
 
     /* Header Styling */
@@ -118,13 +118,6 @@ const InspectorApp = () => {
       align-items: center;
     }
 
-    .header-logo {
-      height: 45px;
-      background: white;
-      padding: 5px 10px;
-      border-radius: 8px;
-    }
-
     .inspector-badge {
       background: rgba(255, 255, 255, 0.15);
       backdrop-filter: blur(5px);
@@ -136,15 +129,23 @@ const InspectorApp = () => {
       gap: 8px;
     }
 
+    /* Titles */
+    .main-title {
+        text-align: center;
+        margin: 0 0 5px 0;
+        color: #0f172a;
+        font-size: 20px;
+        font-weight: 800;
+    }
+
     /* Cards Styling */
     .premium-card {
       background: var(--card-bg);
       border-radius: var(--border-radius);
-      padding: 24px;
-      margin: 20px 15px;
+      padding: 20px;
+      margin: 15px; /* Reduced margin to fill screen better on mobile */
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
       border: 1px solid #e2e8f0;
-      transition: transform 0.2s ease;
     }
 
     .section-title {
@@ -159,12 +160,7 @@ const InspectorApp = () => {
       padding-bottom: 10px;
     }
 
-    /* Verify Grid */
-    .verify-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 15px;
-    }
+    /* Verification Grid - Single Column now */
     .verify-item {
       background: #f8fafc;
       border: 2px dashed #cbd5e1;
@@ -172,17 +168,19 @@ const InspectorApp = () => {
       padding: 20px;
       text-align: center;
       cursor: pointer;
-      min-height: 140px;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
+      width: 100%;
     }
+
     .verify-item.done {
       border-style: solid;
       border-color: var(--success);
       background: #ecfdf5;
     }
+
     .verify-icon { font-size: 30px; margin-bottom: 10px; color: var(--text-light); }
     .verify-item.done .verify-icon { color: var(--success); }
 
@@ -193,6 +191,7 @@ const InspectorApp = () => {
       width: 100%; padding: 14px 16px; padding-right: 40px;
       border: 1px solid #e2e8f0; border-radius: 10px;
       font-size: 15px; font-family: 'Cairo', sans-serif; background: #f8fafc;
+      box-sizing: border-box; /* Fix width issues */
     }
     .input-icon { position: absolute; top: 38px; left: 15px; color: #94a3b8; }
 
@@ -264,7 +263,7 @@ const InspectorApp = () => {
         border: none;
     }
 
-    .note-input { width: 100%; margin-top: 10px; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; font-family: 'Cairo'; font-size: 13px; resize: none; }
+    .note-input { width: 100%; margin-top: 10px; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; font-family: 'Cairo'; font-size: 13px; resize: none; box-sizing: border-box; }
 
     /* Footer */
     .floating-footer {
@@ -281,6 +280,9 @@ const InspectorApp = () => {
       font-family: 'Cairo', sans-serif;
     }
     .submit-main-btn:disabled { background: #cbd5e1; cursor: not-allowed; }
+    
+    /* Signature */
+    .sig-canvas { width: 100% !important; height: 200px !important; border-radius: 8px; }
   `;
 
   // --- Auth Check ---
@@ -306,35 +308,6 @@ const InspectorApp = () => {
       },
       () => alert('فشل تحديد الموقع. تأكد من تفعيل GPS')
     )
-  }
-
-  const startCam = async () => {
-    setIsCamOpen(true)
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } })
-      if (videoRef.current) videoRef.current.srcObject = stream
-    } catch (err) {
-      alert('فشل الوصول للكاميرا')
-      setIsCamOpen(false)
-    }
-  }
-
-  const takeSnap = () => {
-    const video = videoRef.current
-    if (!video) return
-    const canvas = document.createElement('canvas')
-    const scale = 300 / video.videoWidth
-    canvas.width = 300
-    canvas.height = video.videoHeight * scale
-    
-    const ctx = canvas.getContext('2d')
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
-    setPhoto(canvas.toDataURL('image/jpeg', 0.5))
-
-    if (video.srcObject) {
-      video.srcObject.getTracks().forEach((t) => t.stop())
-    }
-    setIsCamOpen(false)
   }
 
   // --- Image Compression ---
@@ -397,7 +370,6 @@ const InspectorApp = () => {
 
   const handleSubmit = async () => {
     if (!geo) { alert('⚠️ يرجى تحديد الموقع أولاً'); topRef.current?.scrollIntoView({ behavior: 'smooth' }); return; }
-    if (!photo) { alert('⚠️ يرجى التقاط صورة سيلفي للتحقق'); topRef.current?.scrollIntoView({ behavior: 'smooth' }); return; }
     if (!formData.contractor) { alert('⚠️ يرجى كتابة اسم المقاول'); return; }
 
     setLoading(true)
@@ -411,7 +383,7 @@ const InspectorApp = () => {
         timestamp: new Date().toLocaleString('ar-SA'),
         ...formData,
         google_maps_link: geo,
-        verification_photo: photo,
+        verification_photo: null, // No Selfie needed
         signature_image: sigPad.current.isEmpty() ? null : sigPad.current.toDataURL('image/png', 0.5),
         answers: {},
         violations: []
@@ -478,62 +450,39 @@ const InspectorApp = () => {
     <div className="app-container">
       <style>{styles}</style>
       
-      {/* Header */}
+      {/* Header - No Logo */}
       <div className="premium-header" ref={topRef}>
-        <div style={{display:'flex', alignItems:'center', gap:'15px'}}>
-           <div className="inspector-badge">
+        <div className="inspector-badge">
              <i className="fa-solid fa-user-shield"></i>
              <span>{user.username}</span>
-           </div>
-           <button 
+        </div>
+        <button 
              onClick={() => { sessionStorage.clear(); navigate('/'); }}
              style={{background:'none', border:'none', color:'rgba(255,255,255,0.7)', cursor:'pointer', fontSize:'18px'}}
            >
              <i className="fa-solid fa-arrow-right-from-bracket"></i>
-           </button>
-        </div>
-        <img src="/imge.jpg" alt="SEC Logo" className="header-logo" />
+        </button>
       </div>
 
       <div style={{padding: '20px 15px'}}>
-        <h2 style={{margin: '0 0 5px 0', color: '#0f172a'}}>نظام السلامة الميداني</h2>
-        <p style={{margin: '0 0 20px 0', color: '#64748b', fontSize: '14px'}}>
+        <h2 className="main-title">مجموعة السلامة ادارة ضواحي الرياض</h2>
+        <p style={{margin: '0 0 20px 0', color: '#64748b', fontSize: '14px', textAlign:'center'}}>
           <i className="fa-regular fa-calendar"></i> {new Date().toLocaleDateString('ar-SA')}
         </p>
 
-        {/* Verification */}
+        {/* Verification - GPS Only */}
         <div className="premium-card">
           <div className="section-title">
-            <i className="fa-solid fa-fingerprint"></i>
-            إثبات التواجد والتحقق
+            <i className="fa-solid fa-location-dot"></i>
+            إثبات الموقع
           </div>
           
-          <div className="verify-grid">
-            <div className={`verify-item ${geo ? 'done' : ''}`} onClick={getGeo}>
-              <i className={`fa-solid ${geo ? 'fa-map-location-dot' : 'fa-location-crosshairs'} verify-icon`}></i>
-              <div style={{fontWeight:'bold', fontSize:'14px'}}>{geo ? 'تم تحديد الموقع' : 'تحديد الموقع'}</div>
-            </div>
-
-            <div className={`verify-item ${photo ? 'done' : ''}`} onClick={photo ? null : startCam}>
-              {isCamOpen ? (
-                <>
-                  <video ref={videoRef} autoPlay playsInline style={{width:'100%', borderRadius:'8px', transform:'scaleX(-1)'}} />
-                  <button onClick={(e) => { e.stopPropagation(); takeSnap(); }} style={{marginTop:'5px', padding:'5px 10px', background:'#ef4444', color:'white', border:'none', borderRadius:'5px'}}>التقاط</button>
-                </>
-              ) : (
-                <>
-                  {photo ? (
-                    <img src={photo} style={{width:'80px', height:'80px', borderRadius:'50%', objectFit:'cover', border:'3px solid #10b981'}} alt="Selfie" />
-                  ) : (
-                    <i className="fa-solid fa-camera verify-icon"></i>
-                  )}
-                  <div style={{fontWeight:'bold', fontSize:'14px', marginTop:'10px'}}>
-                    {photo ? 'تم التقاط الصورة' : 'صورة سيلفي'}
-                  </div>
-                  {photo && <button onClick={() => setPhoto(null)} style={{fontSize:'10px', color:'#ef4444', background:'none', border:'none', marginTop:'5px'}}>إعادة</button>}
-                </>
-              )}
-            </div>
+          <div className={`verify-item ${geo ? 'done' : ''}`} onClick={getGeo}>
+            <i className={`fa-solid ${geo ? 'fa-map-location-dot' : 'fa-location-crosshairs'} verify-icon`}></i>
+            <div style={{fontWeight:'bold', fontSize:'14px'}}>{geo ? 'تم تحديد الموقع' : 'تحديد الموقع GPS'}</div>
+             <div style={{fontSize:'11px', color:'#94a3b8', marginTop:'5px'}}>
+                {geo ? 'إحداثيات دقيقة ✅' : 'اضغط لتفعيل GPS'}
+              </div>
           </div>
         </div>
 
@@ -588,7 +537,7 @@ const InspectorApp = () => {
         </div>
 
         {/* Questions List */}
-        <h3 style={{margin:'20px 15px 10px', color:'#0f172a'}}>قائمة الفحص</h3>
+        <h3 style={{margin:'20px 15px 10px', color:'#0f172a', textAlign:'right'}}>قائمة الفحص</h3>
         {qList.map((q, i) => {
           const qIdx = i + 1
           const currentVal = answers[qIdx]?.val || 'N/A'
@@ -620,7 +569,7 @@ const InspectorApp = () => {
                 </div>
               </div>
 
-              {/* Photo Actions - Only Camera Button */}
+              {/* Photo Actions */}
               <div className="actions-row">
                   <div className="action-btn" onClick={() => document.getElementById(`cam-${qIdx}`).click()}>
                     <i className="fa-solid fa-camera" style={{color:'var(--primary)'}}></i>
@@ -666,10 +615,10 @@ const InspectorApp = () => {
             <i className="fa-solid fa-file-signature"></i>
             توقيع المستلم
           </div>
-          <div className="sig-wrapper">
+          <div className="sig-wrapper" style={{border: '2px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden'}}>
             <SignatureCanvas 
                 ref={sigPad} 
-                canvasProps={{ width: 600, height: 200, className: 'sig-canvas' }} 
+                canvasProps={{ className: 'sig-canvas' }} 
                 backgroundColor="rgb(255, 255, 255)"
             />
           </div>
