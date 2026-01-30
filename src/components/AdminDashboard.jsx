@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import html2pdf from 'html2pdf.js'
 import { supabase } from '../supabaseClient'
 
-// القائمة المحدثة (مطابقة تماماً لصفحة المفتش)
+// قائمة الأسئلة الموحدة
 const fullQuestionsList = [
     "تصريح العمل الأساسي والثانوي متواجد بموقع العمل", 
     "اجتماع ما قبل البدء بالعمل متواجد بموقع العمل", 
@@ -66,7 +66,7 @@ const AdminDashboard = () => {
   const [newInspectorPass, setNewInspectorPass] = useState('')
   const [showPassword, setShowPassword] = useState({})
 
-  // --- Premium Styles Injection ---
+  // --- Styles Injection ---
   const styles = `
     :root { 
       --main-blue: #005a8f; 
@@ -78,342 +78,51 @@ const AdminDashboard = () => {
       --text-light: #64748b;
       --danger: #ef4444; 
       --success: #10b981;
-      --border-radius: 12px;
     }
-
-    body {
-      background-color: var(--bg-color);
-      font-family: 'Cairo', sans-serif;
-      color: var(--text-main);
-    }
-
-    /* Header Styling */
-    .dashboard-header {
-      background: linear-gradient(to right, #005a8f, #004269);
-      padding: 15px 20px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      box-shadow: 0 4px 20px rgba(0, 90, 143, 0.2);
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      color: white;
-    }
-
-    .title-container {
-      font-weight: 800;
-      font-size: 18px;
-    }
-
-    .header-actions {
-      display: flex;
-      gap: 10px;
-    }
-
-    .action-btn {
-      border: none;
-      padding: 8px 16px;
-      border-radius: 8px;
-      font-weight: 700;
-      cursor: pointer;
-      font-size: 13px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      transition: all 0.2s;
-      font-family: 'Cairo';
-    }
-
+    body { background-color: var(--bg-color); font-family: 'Cairo', sans-serif; color: var(--text-main); }
+    .dashboard-header { background: linear-gradient(to right, #005a8f, #004269); padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 20px rgba(0, 90, 143, 0.2); position: sticky; top: 0; z-index: 100; color: white; }
+    .title-container { font-weight: 800; font-size: 18px; }
+    .header-actions { display: flex; gap: 10px; }
+    .action-btn { border: none; padding: 8px 16px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 13px; display: flex; align-items: center; gap: 8px; transition: all 0.2s; font-family: 'Cairo'; }
     .btn-inspector { background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); }
-    .btn-inspector:hover { background: rgba(255,255,255,0.3); }
-
     .btn-logout { background: #fee2e2; color: #b91c1c; }
-    .btn-logout:hover { background: #fecaca; }
-
-    /* Container */
-    .dashboard-container {
-      max-width: 1000px;
-      margin: 20px auto;
-      padding: 0 15px;
-    }
-
-    /* Tabs */
-    .tabs-wrapper {
-      background: white;
-      padding: 8px;
-      border-radius: 16px;
-      display: flex;
-      gap: 10px;
-      margin-bottom: 25px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.03);
-    }
-
-    .tab-item {
-      flex: 1;
-      padding: 12px;
-      border: none;
-      border-radius: 12px;
-      background: transparent;
-      color: var(--text-light);
-      font-weight: 700;
-      font-size: 15px;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      font-family: 'Cairo';
-    }
-
-    .tab-item.active {
-      background: var(--main-blue);
-      color: white;
-      box-shadow: 0 4px 12px rgba(0, 90, 143, 0.3);
-    }
-
-    /* Search Bar */
-    .search-wrapper {
-      position: relative;
-      margin-bottom: 25px;
-    }
-
-    .search-input {
-      width: 100%;
-      padding: 16px 50px 16px 20px;
-      border: 1px solid #e2e8f0;
-      border-radius: 16px;
-      font-size: 15px;
-      background: white;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.03);
-      font-family: 'Cairo';
-      transition: 0.3s;
-      box-sizing: border-box;
-    }
-
-    .search-input:focus {
-      outline: none;
-      border-color: var(--main-blue);
-      box-shadow: 0 4px 20px rgba(0, 90, 143, 0.1);
-    }
-
-    .search-icon {
-      position: absolute;
-      right: 20px;
-      top: 50%;
-      transform: translateY(-50%);
-      color: #94a3b8;
-      font-size: 18px;
-    }
-
-    /* Report Cards */
-    .report-card {
-      background: white;
-      border-radius: 16px;
-      padding: 24px;
-      margin-bottom: 20px;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.02);
-      border: 1px solid #f1f5f9;
-      position: relative;
-      overflow: hidden;
-      transition: transform 0.2s, box-shadow 0.2s;
-      border-right: 5px solid; /* Status Indicator */
-    }
-
-    .report-card:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-    }
-
+    .dashboard-container { max-width: 1000px; margin: 20px auto; padding: 0 15px; }
+    .tabs-wrapper { background: white; padding: 8px; border-radius: 16px; display: flex; gap: 10px; margin-bottom: 25px; box-shadow: 0 2px 10px rgba(0,0,0,0.03); }
+    .tab-item { flex: 1; padding: 12px; border: none; border-radius: 12px; background: transparent; color: var(--text-light); font-weight: 700; font-size: 15px; cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 10px; font-family: 'Cairo'; }
+    .tab-item.active { background: var(--main-blue); color: white; box-shadow: 0 4px 12px rgba(0, 90, 143, 0.3); }
+    .search-wrapper { position: relative; margin-bottom: 25px; }
+    .search-input { width: 100%; padding: 16px 50px 16px 20px; border: 1px solid #e2e8f0; border-radius: 16px; font-size: 15px; background: white; box-shadow: 0 4px 15px rgba(0,0,0,0.03); font-family: 'Cairo'; transition: 0.3s; box-sizing: border-box; }
+    .search-icon { position: absolute; right: 20px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 18px; }
+    .report-card { background: white; border-radius: 16px; padding: 24px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); border: 1px solid #f1f5f9; position: relative; overflow: hidden; transition: transform 0.2s; border-right: 5px solid; }
+    .report-card:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
     .report-card.safe { border-right-color: var(--success); }
     .report-card.violation { border-right-color: var(--danger); }
-
-    .card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: start;
-      margin-bottom: 15px;
-      padding-bottom: 15px;
-      border-bottom: 1px solid #f1f5f9;
-    }
-
-    .serial-number {
-      font-size: 18px;
-      font-weight: 800;
-      color: var(--main-blue);
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .status-badge {
-      padding: 5px 12px;
-      border-radius: 50px;
-      font-size: 12px;
-      font-weight: 700;
-    }
-
+    .card-header { display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #f1f5f9; }
+    .serial-number { font-size: 18px; font-weight: 800; color: var(--main-blue); display: flex; align-items: center; gap: 10px; }
+    .status-badge { padding: 5px 12px; border-radius: 50px; font-size: 12px; font-weight: 700; }
     .status-safe { background: #dcfce7; color: #166534; }
     .status-danger { background: #fee2e2; color: #991b1b; }
-
-    .info-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 15px;
-      margin-bottom: 20px;
-    }
-
-    .info-item {
-      display: flex;
-      flex-direction: column;
-    }
-
-    .info-label {
-      font-size: 12px;
-      color: var(--text-light);
-      margin-bottom: 4px;
-      font-weight: 600;
-    }
-
-    .info-value {
-      font-size: 14px;
-      font-weight: 700;
-      color: var(--text-main);
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    /* Violations Section */
-    .violations-container {
-      background: #fff1f2;
-      border: 1px solid #fecaca;
-      border-radius: 12px;
-      padding: 15px;
-      margin: 15px 0;
-    }
-
-    .v-header {
-      color: #991b1b;
-      font-weight: 800;
-      margin-bottom: 10px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .v-item {
-      background: white;
-      padding: 12px;
-      border-radius: 8px;
-      border: 1px solid #fcd34d;
-      margin-bottom: 8px;
-      font-size: 13px;
-    }
-
-    .action-grid {
-      display: flex;
-      gap: 10px;
-      margin-top: 20px;
-    }
-
-    .btn-action-card {
-      flex: 1;
-      padding: 12px;
-      border: none;
-      border-radius: 10px;
-      font-weight: 700;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      font-family: 'Cairo';
-      font-size: 14px;
-      transition: 0.2s;
-    }
-
+    .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
+    .info-item { display: flex; flex-direction: column; }
+    .info-label { font-size: 12px; color: var(--text-light); margin-bottom: 4px; font-weight: 600; }
+    .info-value { font-size: 14px; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 6px; }
+    .violations-container { background: #fff1f2; border: 1px solid #fecaca; border-radius: 12px; padding: 15px; margin: 15px 0; }
+    .v-item { background: white; padding: 12px; border-radius: 8px; border: 1px solid #fcd34d; margin-bottom: 8px; font-size: 13px; }
+    .action-grid { display: flex; gap: 10px; margin-top: 20px; }
+    .btn-action-card { flex: 1; padding: 12px; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-family: 'Cairo'; font-size: 14px; }
     .btn-view { background: #eff6ff; color: var(--main-blue); }
-    .btn-view:hover { background: #dbeafe; }
-
     .btn-pdf { background: var(--main-blue); color: white; }
-    .btn-pdf:hover { background: #004269; }
-
     .btn-delete { background: white; border: 1px solid #fee2e2; color: #dc2626; }
-    .btn-delete:hover { background: #fee2e2; }
-
-    /* Inspectors List */
-    .inspector-card {
-      background: white;
-      padding: 15px 20px;
-      border-radius: 12px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 10px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.03);
-      border: 1px solid #f1f5f9;
-    }
-
-    .add-inspector-box {
-      background: white;
-      padding: 25px;
-      border-radius: 16px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-      margin-bottom: 25px;
-    }
-
-    .input-row {
-      display: flex;
-      gap: 15px;
-      margin-bottom: 15px;
-    }
-
-    .form-input {
-      flex: 1;
-      padding: 12px;
-      border: 1px solid #e2e8f0;
-      border-radius: 10px;
-      font-family: 'Cairo';
-      background: #f8fafc;
-    }
-
-    .btn-add {
-      width: 100%;
-      padding: 12px;
-      background: var(--success);
-      color: white;
-      border: none;
-      border-radius: 10px;
-      font-weight: 700;
-      cursor: pointer;
-      font-family: 'Cairo';
-    }
-
-    /* Modal */
+    .inspector-card { background: white; padding: 15px 20px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.03); border: 1px solid #f1f5f9; }
+    .add-inspector-box { background: white; padding: 25px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 25px; }
+    .input-row { display: flex; gap: 15px; margin-bottom: 15px; }
+    .form-input { flex: 1; padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px; font-family: 'Cairo'; background: #f8fafc; }
+    .btn-add { width: 100%; padding: 12px; background: var(--success); color: white; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; font-family: 'Cairo'; }
     #imgModal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; display: flex; justify-content: center; align-items: center; }
     #imgModal img { max-width: 95%; max-height: 80vh; border-radius: 8px; }
     .close-modal { position: absolute; top: 20px; right: 20px; color: white; font-size: 30px; cursor: pointer; }
-
-    /* Details Panel */
-    .details-panel {
-      background: #f8fafc;
-      padding: 20px;
-      border-radius: 12px;
-      margin-top: 15px;
-      border: 1px solid #e2e8f0;
-    }
-
-    .q-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 10px 0;
-      border-bottom: 1px solid #e2e8f0;
-      font-size: 13px;
-    }
-    
+    .details-panel { background: #f8fafc; padding: 20px; border-radius: 12px; margin-top: 15px; border: 1px solid #e2e8f0; }
+    .q-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #e2e8f0; font-size: 13px; }
     @media (max-width: 768px) {
       .header-actions span { display: none; }
       .info-grid { grid-template-columns: 1fr; }
@@ -513,118 +222,211 @@ const AdminDashboard = () => {
     setShowPassword(prev => ({ ...prev, [username]: !prev[username] }))
   }
 
-  // --- PDF Generation ---
+  // --- PDF Generation Logic (المعدل والمحسن) ---
   const generatePDF = (r) => {
     const container = document.createElement('div')
     
-    // PDF Table Logic
-    let tableRows = ''
-    fullQuestionsList.forEach((q, i) => {
-      let ans = "نعم" 
-      let color = "#16a34a"
+    // إعدادات CSS للطباعة (منع التقطيع وتنسيق الكروت)
+    const pdfStyles = `
+      <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap');
+        body { font-family: 'Cairo', sans-serif; direction: rtl; color: #333; -webkit-print-color-adjust: exact; }
+        
+        .header-section { text-align: center; border-bottom: 3px solid #f28b00; padding-bottom: 15px; margin-bottom: 20px; }
+        .header-title { color: #005a8f; font-size: 24px; font-weight: 800; margin: 0; }
+        .header-sub { color: #666; font-size: 14px; margin: 5px 0; }
 
-      // Check Violations first
-      const violation = r.violations?.find(v => v.q === q)
-      if (violation) {
-        ans = violation.ans // should be "لا" or Note
-        color = "#dc2626"
-      } else if (r.answers && r.answers[i+1]) {
-          // Check normal answer
-          const val = r.answers[i+1].val || r.answers[i+1]
-          if (val) ans = val
-          
-          if(ans === 'لا') color = "#dc2626"
-          else if (ans === 'N/A' || ans === 'لا ينطبق') {
-              ans = 'لا ينطبق'
-              color = "#666"
-          }
-      }
-
-      tableRows += `
-        <tr style="border-bottom:1px solid #eee;">
-          <td style="padding:8px; width:40px;">${i+1}</td>
-          <td style="padding:8px; text-align:right;">${q}</td>
-          <td style="padding:8px; color:${color}; font-weight:bold;">${ans}</td>
-        </tr>`
-    })
-
-    // Violations Section for PDF
-    let violationsHTML = ''
-    if (r.violations && r.violations.length > 0) {
-      let vCards = ''
-      r.violations.forEach(v => {
-        // Handle multiple photos in violation
-        let photosHTML = ''
-        if (v.photos && v.photos.length > 0) {
-             photosHTML = `<div style="margin-bottom:5px;">`
-             v.photos.forEach(p => {
-                 photosHTML += `<img src="${p}" style="width:60px; height:60px; margin-left:5px; border-radius:5px; object-fit:cover;">`
-             })
-             photosHTML += `</div>`
-        } else if (v.photo) {
-             // Backward compatibility
-             photosHTML = `<img src="${v.photo}" style="width:60px; margin-left:5px; border-radius:5px;">`
+        .info-grid { 
+            display: grid; grid-template-columns: 1fr 1fr; gap: 8px; 
+            font-size: 12px; background: #f8fafc; padding: 15px; 
+            border-radius: 8px; margin-bottom: 20px; border: 1px solid #e2e8f0; 
         }
 
-        vCards += `
-          <div style="background:#fff5f5; border:1px solid #feb2b2; margin-bottom:10px; padding:10px; font-size:12px;">
-            <div style="color:#b91c1c; font-weight:bold;">⚠️ ${v.q}</div>
-            <div>الحالة: ${v.ans}</div>
-            ${v.note ? `<div>ملاحظة: ${v.note}</div>` : ''}
-            ${photosHTML}
-          </div>`
-      })
-      violationsHTML = `<h4 style="color:#b91c1c; margin-top:15px;">🚩 المخالفات والملاحظات</h4>${vCards}`
-    }
+        /* كارت الملاحظة */
+        .observation-card {
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            page-break-inside: avoid; /* منع القص */
+            break-inside: avoid;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
 
+        /* ألوان الكارت */
+        .card-danger { border-right: 5px solid #dc2626; background-color: #fef2f2; }
+        .card-success { border-right: 5px solid #16a34a; background-color: #f0fdf4; }
+        .card-neutral { border-right: 5px solid #64748b; background-color: #f8fafc; }
+
+        .q-title { font-weight: 800; font-size: 14px; margin-bottom: 8px; color: #1e293b; }
+        .q-status { font-size: 12px; font-weight: bold; margin-bottom: 5px; }
+        .q-note { font-size: 12px; color: #555; background: rgba(255,255,255,0.7); padding: 5px; border-radius: 4px; border: 1px dashed #ccc; margin-bottom: 10px; }
+
+        /* حاوية الصور الكبيرة */
+        .photos-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+            justify-content: flex-start;
+        }
+        .large-evidence-img {
+            width: 48%; /* عرض كبير للصورة */
+            height: 220px; 
+            object-fit: cover; 
+            border-radius: 6px;
+            border: 1px solid #cbd5e1;
+            background-color: #fff;
+        }
+
+        table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 20px; }
+        th { background: #005a8f; color: white; padding: 8px; text-align: right; }
+        td { border-bottom: 1px solid #eee; padding: 6px; }
+        tr { page-break-inside: avoid; }
+
+        .footer { margin-top: 30px; display: flex; justify-content: space-between; page-break-inside: avoid; }
+      </style>
+    `
+
+    let detailedItemsHTML = ''
+    let simpleItemsRows = ''
+
+    fullQuestionsList.forEach((q, i) => {
+        // البحث عن البند في قائمة الانتهاكات
+        const violationData = r.violations?.find(v => v.q === q);
+        // البحث عن الإجابة في القائمة العادية
+        const normalAns = r.answers && r.answers[i+1];
+        let finalAns = "لا ينطبق";
+
+        if (violationData) finalAns = violationData.ans;
+        else if (normalAns) finalAns = normalAns.val || normalAns;
+        
+        if (finalAns === 'N/A') finalAns = 'لا ينطبق';
+
+        // الشروط لعرض البند في كارت تفصيلي:
+        // 1. إذا كانت الإجابة "لا" (مخالفة) -> أحمر
+        // 2. إذا كانت "نعم" + يوجد صور (توثيق) -> أخضر
+        // 3. إذا كان هناك ملاحظة نصية
+        const hasPhotos = violationData && (violationData.photos?.length > 0 || violationData.photo);
+        const hasNote = violationData && violationData.note;
+        const isDanger = finalAns === 'لا';
+
+        if (isDanger || hasPhotos || hasNote) {
+            // تحديد نمط الكارت
+            let cardClass = 'card-neutral';
+            let statusColor = '#64748b';
+            
+            if (isDanger) {
+                cardClass = 'card-danger';
+                statusColor = '#dc2626';
+            } else if (finalAns === 'نعم') {
+                cardClass = 'card-success'; // لون أخضر للتوثيق الإيجابي
+                statusColor = '#16a34a';
+            }
+
+            // تجهيز الصور
+            let photosHTML = '';
+            if (hasPhotos) {
+                photosHTML = `<div class="photos-container">`;
+                if (violationData.photos && violationData.photos.length > 0) {
+                    violationData.photos.forEach(src => {
+                        photosHTML += `<img src="${src}" class="large-evidence-img" />`;
+                    });
+                } else if (violationData.photo) {
+                    photosHTML += `<img src="${violationData.photo}" class="large-evidence-img" />`;
+                }
+                photosHTML += `</div>`;
+            }
+
+            detailedItemsHTML += `
+                <div class="observation-card ${cardClass}">
+                    <div class="q-title">${i+1}. ${q}</div>
+                    <div class="q-status">الحالة: <span style="color:${statusColor}">${finalAns}</span></div>
+                    ${hasNote ? `<div class="q-note">📝 ملاحظة: ${violationData.note}</div>` : ''}
+                    ${photosHTML}
+                </div>
+            `;
+        } else {
+            // بنود عادية (جدول مختصر)
+            let rowColor = finalAns === 'نعم' ? '#16a34a' : '#64748b';
+            simpleItemsRows += `
+                <tr>
+                    <td style="width:30px; text-align:center; color:#999;">${i+1}</td>
+                    <td>${q}</td>
+                    <td style="width:80px; font-weight:bold; color:${rowColor}; text-align:center;">${finalAns}</td>
+                </tr>
+            `;
+        }
+    });
+
+    // بناء محتوى التقرير
     const content = `
-      <div style="font-family:'Cairo',sans-serif; padding:20px; direction:rtl; width:100%;">
-        <div style="border-bottom:4px solid #f28b00; padding-bottom:15px; margin-bottom:20px; text-align:center;">
-            <h2 style="color:#005a8f; margin:0;">مجموعة السلامة ادارة ضواحي الرياض</h2>
-            <p style="margin:5px 0;">تقرير تفتيش سلامة ميداني</p>
+      ${pdfStyles}
+      <div style="padding:15px; max-width: 100%;">
+        
+        <div class="header-section">
+            <h1 class="header-title">مجموعة السلامة ادارة ضواحي الرياض</h1>
+            <div class="header-sub">تقرير تفتيش سلامة ميداني</div>
         </div>
         
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; font-size:12px; margin-bottom:20px; background:#f8fafc; padding:15px; border-radius:8px;">
-             <div><b>رقم التقرير:</b> ${r.serial}</div>
+        <div class="info-grid">
+             <div><b>رقم التقرير:</b> #${r.serial}</div>
              <div><b>التاريخ:</b> ${r.timestamp}</div>
              <div><b>المفتش:</b> ${r.inspector}</div>
-             <div><b>فريق الزيارة:</b> ${r.visit_team || '-'}</div>
-             <div><b>الاستشاري:</b> ${r.consultant || '-'}</div>
-             <div><b>الموقع:</b> ${r.location}</div>
              <div><b>المقاول:</b> ${r.contractor}</div>
-             <div><b>رقم الأمر:</b> ${r.order_number || '-'}</div>
-             <div><b>وصف العمل:</b> ${r.work_desc || '-'}</div>
+             <div><b>الموقع:</b> ${r.location}</div>
+             <div><b>الاستشاري:</b> ${r.consultant || '-'}</div>
+             <div style="grid-column: span 2;"><b>وصف العمل:</b> ${r.work_desc || '-'}</div>
+             <div style="grid-column: span 2;">
+                <b>الموقع الجغرافي:</b> 
+                ${r.google_maps_link ? `<a href="${r.google_maps_link}" style="color:#005a8f; text-decoration:none;">${r.google_maps_link}</a>` : 'غير متوفر'}
+             </div>
         </div>
-        
-        <div style="margin-bottom:15px;">
-            <div style="font-size:12px;"><b>الموقع الجغرافي:</b> 
-            ${r.google_maps_link ? `<a href="${r.google_maps_link}">عرض على الخريطة</a>` : 'غير متوفر'}
+
+        ${detailedItemsHTML ? `
+            <h3 style="color:#005a8f; margin-top:25px; border-bottom:2px solid #eee; padding-bottom:5px;">📸 الملاحظات الميدانية والتوثيق</h3>
+            <div style="margin-top:15px;">
+                ${detailedItemsHTML}
             </div>
-        </div>
+        ` : ''}
 
-        ${violationsHTML}
+        ${simpleItemsRows ? `
+            <div style="page-break-inside: avoid;">
+                <h3 style="background:#005a8f; color:white; padding:8px; border-radius:4px; margin-top:30px; font-size:14px;">✅ قائمة الفحص السريع</h3>
+                <table>
+                    <tbody>${simpleItemsRows}</tbody>
+                </table>
+            </div>
+        ` : ''}
 
-        <h4 style="background:#005a8f; color:white; padding:5px;">قائمة الفحص</h4>
-        <table style="width:100%; border-collapse:collapse; font-size:11px;">${tableRows}</table>
-
-        <div style="margin-top:30px; display:flex; justify-content:space-between; text-align:center;">
-            <div><b>المفتش</b><br>${r.inspector}</div>
-            ${r.signature_image ? `<div><b>توقيع المستلم</b><br><img src="${r.signature_image}" style="max-height:50px;"></div>` : ''}
+        <div class="footer">
+            <div style="text-align:center;">
+                <p style="margin-bottom:5px; font-weight:bold; color:#005a8f;">المفتش</p>
+                <p>${r.inspector}</p>
+            </div>
+            ${r.signature_image ? `
+            <div style="text-align:center;">
+                <p style="margin-bottom:5px; font-weight:bold; color:#005a8f;">توقيع المستلم</p>
+                <img src="${r.signature_image}" style="height:70px; border-bottom:1px solid #ccc;">
+            </div>` : ''}
         </div>
       </div>
     `
 
     container.innerHTML = content
-    html2pdf()
-      .set({
-        margin: 10,
-        filename: `Report_${r.serial}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2 },
-        jsPDF: { unit: 'mm', format: 'a4' }
-      })
-      .from(container)
-      .save()
+
+    // إعدادات التصدير لملف PDF
+    const opt = {
+      margin:       [10, 10, 10, 10],
+      filename:     `Report_${r.contractor}_${r.serial}.pdf`,
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { scale: 2, useCORS: true, scrollY: 0 },
+      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      pagebreak:    { mode: ['css', 'legacy'] }
+    };
+
+    html2pdf().set(opt).from(container).save()
   }
 
   // --- Filtering ---
@@ -646,12 +448,11 @@ const AdminDashboard = () => {
         </div>
       )}
 
-      {/* Header - No Logo, Updated Title */}
+      {/* Header */}
       <div className="dashboard-header">
         <div className="title-container">
             مجموعة السلامة ادارة ضواحي الرياض
         </div>
-        
         <div className="header-actions">
             <button className="action-btn btn-inspector" onClick={() => navigate('/inspector')}>
                 <i className="fa-solid fa-clipboard-check"></i>
@@ -665,19 +466,12 @@ const AdminDashboard = () => {
       </div>
 
       <div className="dashboard-container">
-        
         {/* Tabs */}
         <div className="tabs-wrapper">
-          <button 
-            className={`tab-item ${activeTab === 'reports' ? 'active' : ''}`} 
-            onClick={() => setActiveTab('reports')}
-          >
+          <button className={`tab-item ${activeTab === 'reports' ? 'active' : ''}`} onClick={() => setActiveTab('reports')}>
             <i className="fa-regular fa-file-lines"></i> التقارير
           </button>
-          <button 
-            className={`tab-item ${activeTab === 'inspectors' ? 'active' : ''}`} 
-            onClick={() => setActiveTab('inspectors')}
-          >
+          <button className={`tab-item ${activeTab === 'inspectors' ? 'active' : ''}`} onClick={() => setActiveTab('inspectors')}>
             <i className="fa-solid fa-users-gear"></i> المفتشين
           </button>
         </div>
@@ -686,13 +480,7 @@ const AdminDashboard = () => {
         {activeTab === 'reports' && (
           <div className="section">
             <div className="search-wrapper">
-              <input 
-                type="text" 
-                className="search-input" 
-                placeholder="🔍 بحث برقم التقرير، المفتش، اسم المقاول..." 
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
+              <input type="text" className="search-input" placeholder="🔍 بحث برقم التقرير، المفتش، اسم المقاول..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
               <i className="fa-solid fa-filter search-icon"></i>
             </div>
 
@@ -703,15 +491,10 @@ const AdminDashboard = () => {
                  const hasViolations = r.violations && r.violations.length > 0;
                  return (
                   <div className={`report-card ${hasViolations ? 'violation' : 'safe'}`} key={r.id}>
-                    
                     <div className="card-header">
                       <div>
-                        <div className="serial-number">
-                           <i className="fa-solid fa-hashtag"></i> {r.serial}
-                        </div>
-                        <div style={{fontSize:'12px', color:'#94a3b8', marginTop:'5px'}}>
-                           <i className="fa-regular fa-clock"></i> {r.timestamp}
-                        </div>
+                        <div className="serial-number"><i className="fa-solid fa-hashtag"></i> {r.serial}</div>
+                        <div style={{fontSize:'12px', color:'#94a3b8', marginTop:'5px'}}><i className="fa-regular fa-clock"></i> {r.timestamp}</div>
                       </div>
                       <div className={`status-badge ${hasViolations ? 'status-danger' : 'status-safe'}`}>
                          {hasViolations ? `${r.violations.length} ملاحظات` : 'سليم ✅'}
@@ -719,25 +502,10 @@ const AdminDashboard = () => {
                     </div>
 
                     <div className="info-grid">
-                      <div className="info-item">
-                        <span className="info-label">المفتش</span>
-                        <span className="info-value"><i className="fa-solid fa-user-shield" style={{color:'#005a8f'}}></i> {r.inspector}</span>
-                      </div>
-                      <div className="info-item">
-                        <span className="info-label">المقاول</span>
-                        <span className="info-value"><i className="fa-solid fa-hard-hat" style={{color:'#f59e0b'}}></i> {r.contractor}</span>
-                      </div>
-                      <div className="info-item">
-                         <span className="info-label">فريق الزيارة</span>
-                         <span className="info-value">{r.visit_team || '-'}</span>
-                      </div>
-                      <div className="info-item">
-                         <span className="info-label">رقم الأمر</span>
-                         <span className="info-value">{r.order_number || '-'}</span>
-                      </div>
-                      <div className="info-item">
-                        <span className="info-label">الموقع</span>
-                        <span className="info-value">
+                      <div className="info-item"><span className="info-label">المفتش</span><span className="info-value"><i className="fa-solid fa-user-shield" style={{color:'#005a8f'}}></i> {r.inspector}</span></div>
+                      <div className="info-item"><span className="info-label">المقاول</span><span className="info-value"><i className="fa-solid fa-hard-hat" style={{color:'#f59e0b'}}></i> {r.contractor}</span></div>
+                      <div className="info-item"><span className="info-label">فريق الزيارة</span><span className="info-value">{r.visit_team || '-'}</span></div>
+                      <div className="info-item"><span className="info-label">الموقع</span><span className="info-value">
                            {r.google_maps_link ? 
                              <a href={r.google_maps_link} target="_blank" rel="noreferrer" style={{color:'#2563eb', textDecoration:'none', display:'flex', alignItems:'center', gap:'5px'}}>
                                <i className="fa-solid fa-location-dot"></i> {r.location || 'الخريطة'}
@@ -746,37 +514,6 @@ const AdminDashboard = () => {
                         </span>
                       </div>
                     </div>
-
-                    {hasViolations && (
-                      <div className="violations-container">
-                        <div className="v-header">
-                          <i className="fa-solid fa-triangle-exclamation"></i> أبرز الملاحظات:
-                        </div>
-                        {r.violations.map((v, idx) => (
-                          <div className="v-item" key={idx}>
-                            <div style={{fontWeight:'bold', marginBottom:'5px'}}>{idx+1}. {v.q}</div>
-                            <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
-                                <span style={{fontSize:'12px', color:'#ef4444', fontWeight:'bold'}}>{v.ans}</span>
-                            </div>
-                            
-                            {/* Display Photos if available */}
-                            {v.photos && v.photos.length > 0 && (
-                                <div style={{display:'flex', gap:'5px', marginTop:'5px'}}>
-                                    {v.photos.map((pic, pIdx) => (
-                                        <img key={pIdx} src={pic} style={{width:'40px', height:'40px', borderRadius:'4px', objectFit:'cover', cursor:'pointer'}} onClick={()=>setModalImage(pic)} alt="violation" />
-                                    ))}
-                                </div>
-                            )}
-                            {/* Fallback for old single photo */}
-                            {!v.photos && v.photo && (
-                                <img src={v.photo} style={{width:'40px', height:'40px', borderRadius:'4px', objectFit:'cover', marginTop:'5px', cursor:'pointer'}} onClick={()=>setModalImage(v.photo)} alt="violation" />
-                            )}
-
-                            {v.note && <div style={{fontSize:'12px', color:'#666', marginTop:'4px'}}>📝 {v.note}</div>}
-                          </div>
-                        ))}
-                      </div>
-                    )}
 
                     <div className="action-grid">
                       <button className="btn-action-card btn-view" onClick={() => setExpandedReport(expandedReport === r.id ? null : r.id)}>
@@ -790,33 +527,23 @@ const AdminDashboard = () => {
                       </button>
                     </div>
 
-                    {/* Expanded Details */}
                     {expandedReport === r.id && (
                       <div className="details-panel">
                         <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'10px', marginBottom:'15px', paddingBottom:'15px', borderBottom:'1px solid #ddd', fontSize:'13px'}}>
                              <div><b>الاستشاري:</b> {r.consultant || '-'}</div>
                              <div><b>المستلم:</b> {r.receiver || '-'}</div>
                              <div><b>وصف العمل:</b> {r.work_desc || '-'}</div>
-                             <div><b>فريق الزيارة:</b> {r.visit_team || '-'}</div>
                         </div>
-
                         <div style={{maxHeight:'300px', overflowY:'auto'}}>
                           {fullQuestionsList.map((q, i) => {
                             const answerObj = r.answers ? r.answers[i+1] : null;
                             const ans = answerObj ? (answerObj.val || answerObj) : "N/A";
                             const isViolation = r.violations?.some(v => v.q === q);
-                            // If user selected "N/A" it is stored as "لا ينطبق" usually
                             const displayAns = isViolation ? "لا" : (ans === "N/A" || ans === "لا ينطبق" ? "لا ينطبق" : ans);
-                            
                             return (
                               <div className="q-row" key={i}>
                                 <div style={{flex:1, paddingLeft:'10px'}}>{q}</div>
-                                <div style={{
-                                    fontWeight:'bold', 
-                                    color: displayAns==='نعم'?'#16a34a': displayAns==='لا'?'#dc2626':'#64748b',
-                                    background: displayAns==='نعم'?'#dcfce7': displayAns==='لا'?'#fee2e2':'#f1f5f9',
-                                    padding: '2px 8px', borderRadius:'4px', fontSize:'11px', whiteSpace:'nowrap'
-                                }}>
+                                <div style={{fontWeight:'bold', color: displayAns==='نعم'?'#16a34a': displayAns==='لا'?'#dc2626':'#64748b', background: displayAns==='نعم'?'#dcfce7': displayAns==='لا'?'#fee2e2':'#f1f5f9', padding: '2px 8px', borderRadius:'4px', fontSize:'11px', whiteSpace:'nowrap'}}>
                                   {displayAns}
                                 </div>
                               </div>
@@ -825,7 +552,6 @@ const AdminDashboard = () => {
                         </div>
                       </div>
                     )}
-
                   </div>
                  )
                })
@@ -840,26 +566,10 @@ const AdminDashboard = () => {
             <div className="add-inspector-box">
               <h3 style={{ color: 'var(--main-blue)', marginBottom: '15px' }}><i className="fa-solid fa-user-plus"></i> إضافة مفتش جديد</h3>
               <div className="input-row">
-                <input 
-                  className="form-input" 
-                  placeholder="اسم المفتش (User ID)" 
-                  value={newInspectorName}
-                  onChange={(e) => setNewInspectorName(e.target.value)}
-                />
+                <input className="form-input" placeholder="اسم المفتش" value={newInspectorName} onChange={(e) => setNewInspectorName(e.target.value)} />
                 <div style={{position:'relative', flex:1}}>
-                  <input 
-                    type={showPassword['new'] ? "text" : "password"} 
-                    className="form-input" 
-                    placeholder="كلمة المرور" 
-                    style={{width:'100%'}}
-                    value={newInspectorPass}
-                    onChange={(e) => setNewInspectorPass(e.target.value)}
-                  />
-                  <i 
-                    className={`fa-regular ${showPassword['new'] ? "fa-eye-slash" : "fa-eye"}`} 
-                    style={{position:'absolute', left:'10px', top:'50%', transform:'translateY(-50%)', cursor:'pointer', color:'#94a3b8'}} 
-                    onClick={() => togglePassVisibility('new')}
-                  ></i>
+                  <input type={showPassword['new'] ? "text" : "password"} className="form-input" placeholder="كلمة المرور" style={{width:'100%'}} value={newInspectorPass} onChange={(e) => setNewInspectorPass(e.target.value)} />
+                  <i className={`fa-regular ${showPassword['new'] ? "fa-eye-slash" : "fa-eye"}`} style={{position:'absolute', left:'10px', top:'50%', transform:'translateY(-50%)', cursor:'pointer', color:'#94a3b8'}} onClick={() => togglePassVisibility('new')}></i>
                 </div>
               </div>
               <button className="btn-add" onClick={addInspector}>حفظ البيانات</button>
@@ -870,35 +580,15 @@ const AdminDashboard = () => {
               {inspectorsList.map((insp) => (
                 <div className="inspector-card" key={insp.id}>
                   <div style={{display:'flex', alignItems:'center', gap:'10px'}}>
-                    <div style={{width:'40px', height:'40px', background:'#e0f2fe', borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', color:'#0284c7'}}>
-                      <i className="fa-solid fa-user"></i>
-                    </div>
-                    <div>
-                        <div style={{fontWeight:'bold'}}>{insp.username}</div>
-                        <div style={{fontSize:'11px', color:'#64748b'}}>Safety Inspector</div>
-                    </div>
+                    <div style={{width:'40px', height:'40px', background:'#e0f2fe', borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', color:'#0284c7'}}><i className="fa-solid fa-user"></i></div>
+                    <div><div style={{fontWeight:'bold'}}>{insp.username}</div><div style={{fontSize:'11px', color:'#64748b'}}>Safety Inspector</div></div>
                   </div>
-                  
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <div style={{background:'#f8fafc', padding:'5px 10px', borderRadius:'6px', display:'flex', alignItems:'center', gap:'5px', border:'1px solid #e2e8f0'}}>
-                      <input 
-                        type={showPassword[insp.username] ? "text" : "password"} 
-                        value={insp.password} 
-                        readOnly 
-                        style={{ border: 'none', background: 'none', width: '80px', textAlign: 'center', fontSize:'13px', color:'#475569' }} 
-                      />
-                      <i 
-                        className={`fa-regular ${showPassword[insp.username] ? "fa-eye-slash" : "fa-eye"}`} 
-                        style={{ cursor: 'pointer', color: '#94a3b8', fontSize:'13px' }} 
-                        onClick={() => togglePassVisibility(insp.username)}
-                      ></i>
+                      <input type={showPassword[insp.username] ? "text" : "password"} value={insp.password} readOnly style={{ border: 'none', background: 'none', width: '80px', textAlign: 'center', fontSize:'13px', color:'#475569' }} />
+                      <i className={`fa-regular ${showPassword[insp.username] ? "fa-eye-slash" : "fa-eye"}`} style={{ cursor: 'pointer', color: '#94a3b8', fontSize:'13px' }} onClick={() => togglePassVisibility(insp.username)}></i>
                     </div>
-                    <button 
-                      onClick={() => deleteInspector(insp.username)} 
-                      style={{ background: '#fee2e2', color: '#dc2626', border: 'none', width:'35px', height:'35px', borderRadius: '8px', cursor: 'pointer' }}
-                    >
-                      <i className="fa-solid fa-trash-can"></i>
-                    </button>
+                    <button onClick={() => deleteInspector(insp.username)} style={{ background: '#fee2e2', color: '#dc2626', border: 'none', width:'35px', height:'35px', borderRadius: '8px', cursor: 'pointer' }}><i className="fa-solid fa-trash-can"></i></button>
                   </div>
                 </div>
               ))}
