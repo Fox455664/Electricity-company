@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import SignatureCanvas from 'react-signature-canvas'
 import { supabase } from '../supabaseClient'
 
-// القائمة الكاملة للأسئلة كما في الملف الأصلي
+// القائمة الكاملة للأسئلة
 const qList = [
     "تصريح العمل الأساسي والثانوي متواجد بموقع العمل", "اجتماع ما قبل البدء بالعمل متواجد بموقع العمل", "نموذج فريق العمل متواجد بموقع العمل (مذكور رقم المقايسة – وصف العمل – رقم التصريح – توقيع مشرف الكهرب والشركة)", "إجراءات العمل الآمن وتقييم المخاطر وتوفرها بلغات مناسبة", "إلمام المستلم وفريق العمل بإجراءات العمل الآمن وتقييم المخاطر للمهمة", "ملاحظات", "بطاقة تعميد المصدر والمستلم والعامل المشارك سارية وبصلاحيات مناسبة للعمل", "تأهيل سائق المعدات (سائق ونش – سلة هوائية -........)", "المستلم متواجد بموقع العمل", "وضع أقفال السلامة و البطاقات التحذيرية و إكتمال بيانات التواصل", "التأكد من تركيب الأرضي المتنقل من الجهتين", "التأكد من فعالية جهاز كشف الجهد التستر", "التأكد من تواجد نموذج فحص المركبة والعدد والادوات متواجد شهادة المسعف والمكافح وفحص المركبة والباركود الخاص بالخطط", "نماذج الفحص", "نموذج فحص المركبة", "نموذج فحص العدد والادوات", "شهادة المسعف", "شهادة المكافح", "شهادة tuv", "QR Code", "فحص معدات الرفع و الحفر من قبل طرف ثالث (تى يو فى)", "التأكد من مطابقة السلات للمواصفات ( كفرات – زيوت – كسور – حزام الأمان – تكدس مواد .. الخ)", "التأكد من سلامة خطاف الونش واحبال الرفع", "طفاية حريق سليمة ومفحوصة وسلامة استكر الفحص", "شنطة إسعافات مكتملة ومفحوصة", "التأكد من تركيب الأرضي للسيارات", "الحمل الأقصى محدد بوضوح على جميع معدات الرفع", "مهام الوقاية الشخصية سليمة (بسؤال الموظف والتفتيش علية) خوذة - ملابس – حذاء", "التفتيش على القفاز المطاطي (33000 – 13000 – 1000) ك.ف.أ", "الخوذة الكهربائية مزودة بحامى وجة", "أحزمة السلامة مرقمة وسليمة", "استخدام حواجز حماية سليمة وكافية و شريط تحذيري", "كفاية اللوحات الإرشادية المرورية", "الترميز بالألوان حسب الشهر للعدد والأدوات وأدوات السلامة", "تخزين أسطوانات الغاز وأسطوانات الاكسجين واللحام وترميزها", "وجود أغطية الحماية لأسطوانات الغاز والأكسجين", "ليات الاوكسي استيلين لا يوجد بها تشققات او تالفة", "سلامة المنظم والعدادات", "وجود شعار المقاول على المركبات والمعدات", "تم ازالة المخلفات بعد الانتهاء من العمل", "خطط متعلقة بتصاريح العمل", "خطة الطوارئ", "خطة المنع من السقوط", "خطة الإنقاذ في العمل على المرتفعات", "خطة رفع الأحمال الحرجة", "إجراء وملصقات حماية السمع", "ملصقات العمل على مرتفعات اوملصق أغراض متساقطة"
 ];
@@ -17,7 +17,7 @@ const InspectorApp = () => {
   // States
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(false)
-  const [btnText, setBtnText] = useState('إرسال التقرير النهائي 🚀')
+  const [btnText, setBtnText] = useState('إعتماد وإرسال التقرير')
   
   // Form Data
   const [formData, setFormData] = useState({
@@ -34,22 +34,281 @@ const InspectorApp = () => {
   const [photo, setPhoto] = useState(null)
   const [isCamOpen, setIsCamOpen] = useState(false)
 
-  // Answers Store: { 1: { val: 'نعم', note: '', file: File }, ... }
+  // Answers Store
   const [answers, setAnswers] = useState({})
 
-  // Styles Injection
+  // --- Premium Styles (CSS-in-JS) ---
   const styles = `
-    .verify-box { background: #eff6ff; border: 2px dashed #3b82f6; padding: 15px; border-radius: 10px; text-align: center; margin-bottom: 15px; }
-    .btn-action { background: #0f766e; color: white; border: none; padding: 10px; width: 100%; border-radius: 8px; font-weight:bold; margin-top:5px; cursor: pointer; font-family: 'Cairo'; }
-    .opt-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:8px; }
-    .opt-btn { background:#f8fafc; padding:10px 2px; border-radius:6px; text-align:center; font-size:12px; font-weight:bold; cursor:pointer; border:1px solid #e2e8f0; transition:0.2s; display:block; }
+    :root {
+      --primary: #005a8f;
+      --accent: #f28b00;
+      --bg-color: #f8fafc;
+      --card-bg: #ffffff;
+      --text-main: #1e293b;
+      --text-light: #64748b;
+      --success: #10b981;
+      --danger: #ef4444;
+      --border-radius: 16px;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      font-family: 'Cairo', sans-serif;
+    }
+
+    .app-container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding-bottom: 100px;
+    }
+
+    /* Header Styling */
+    .premium-header {
+      background: linear-gradient(135deg, #005a8f 0%, #004269 100%);
+      color: white;
+      padding: 20px;
+      border-radius: 0 0 25px 25px;
+      box-shadow: 0 10px 30px rgba(0, 90, 143, 0.15);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .header-logo {
+      height: 45px;
+      background: white;
+      padding: 5px 10px;
+      border-radius: 8px;
+    }
+
+    .inspector-badge {
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(5px);
+      padding: 8px 16px;
+      border-radius: 50px;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Cards Styling */
+    .premium-card {
+      background: var(--card-bg);
+      border-radius: var(--border-radius);
+      padding: 24px;
+      margin: 20px 15px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+      border: 1px solid #e2e8f0;
+      transition: transform 0.2s ease;
+    }
+
+    .section-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 2px solid #f1f5f9;
+      padding-bottom: 10px;
+    }
+
+    /* Verification Grid */
+    .verify-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+    }
+
+    .verify-item {
+      background: #f8fafc;
+      border: 2px dashed #cbd5e1;
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 140px;
+    }
+
+    .verify-item.done {
+      border-style: solid;
+      border-color: var(--success);
+      background: #ecfdf5;
+    }
+
+    .verify-icon {
+      font-size: 30px;
+      margin-bottom: 10px;
+      color: var(--text-light);
+    }
+    .verify-item.done .verify-icon { color: var(--success); }
+
+    /* Inputs Styling */
+    .input-wrapper {
+      margin-bottom: 15px;
+      position: relative;
+    }
+
+    .input-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-light);
+      margin-bottom: 6px;
+    }
+
+    .premium-input {
+      width: 100%;
+      padding: 14px 16px;
+      padding-right: 40px; /* Space for icon */
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      font-size: 15px;
+      font-family: 'Cairo', sans-serif;
+      transition: border-color 0.2s;
+      background: #f8fafc;
+    }
+
+    .premium-input:focus {
+      outline: none;
+      border-color: var(--primary);
+      background: white;
+      box-shadow: 0 0 0 3px rgba(0, 90, 143, 0.1);
+    }
+
+    .input-icon {
+      position: absolute;
+      top: 38px;
+      left: 15px;
+      color: #94a3b8;
+    }
+
+    /* Question Card Styling */
+    .question-card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      margin: 15px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+      border-right: 4px solid transparent;
+    }
+
+    .question-card.answered {
+      border-right-color: var(--primary);
+    }
+
+    .q-text {
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 15px;
+      line-height: 1.5;
+    }
+
+    /* Modern Radio Buttons (Segmented Control) */
+    .options-container {
+      display: flex;
+      background: #f1f5f9;
+      padding: 4px;
+      border-radius: 10px;
+      gap: 5px;
+    }
+
+    .option-btn {
+      flex: 1;
+      padding: 10px;
+      text-align: center;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      color: var(--text-light);
+    }
+
+    .option-btn:hover { background: rgba(255,255,255,0.5); }
+
+    .option-btn.yes.active { background: #10b981; color: white; box-shadow: 0 2px 5px rgba(16, 185, 129, 0.3); }
+    .option-btn.no.active { background: #ef4444; color: white; box-shadow: 0 2px 5px rgba(239, 68, 68, 0.3); }
+    .option-btn.na.active { background: #64748b; color: white; box-shadow: 0 2px 5px rgba(100, 116, 139, 0.3); }
+
+    /* Action Buttons */
+    .photo-btn {
+      margin-top: 15px;
+      background: #fff;
+      border: 1px dashed #cbd5e1;
+      color: var(--primary);
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 13px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .note-input {
+      width: 100%;
+      margin-top: 10px;
+      padding: 10px;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      font-family: 'Cairo';
+      font-size: 13px;
+      resize: none;
+    }
+
+    /* Submit Footer */
+    .floating-footer {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      right: 20px;
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(10px);
+      padding: 15px;
+      border-radius: 16px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+      z-index: 100;
+      display: flex;
+      justify-content: center;
+    }
+
+    .submit-main-btn {
+      background: linear-gradient(135deg, var(--accent) 0%, #e67e00 100%);
+      color: white;
+      border: none;
+      padding: 16px 40px;
+      border-radius: 50px;
+      font-weight: 700;
+      font-size: 16px;
+      box-shadow: 0 4px 15px rgba(242, 139, 0, 0.4);
+      cursor: pointer;
+      width: 100%;
+      font-family: 'Cairo', sans-serif;
+      transition: transform 0.2s;
+    }
     
-    .opt-btn.ok.selected { background:#dcfce7; color:#166534; border-color:#22c55e; }
-    .opt-btn.no.selected { background:#fee2e2; color:#991b1b; border-color:#ef4444; }
-    .opt-btn.na.selected { background:#e2e8f0; color:#475569; border-color:#94a3b8; }
-    
-    .sig-pad { border: 2px solid #ddd; border-radius: 8px; width: 100%; height: 180px; background: #fafafa; }
-    label { font-weight:bold; color:#333; font-size:13px; margin-top:8px; display:block; }
+    .submit-main-btn:active { transform: scale(0.98); }
+    .submit-main-btn:disabled { background: #cbd5e1; box-shadow: none; cursor: not-allowed; }
+
+    /* Signature */
+    .sig-wrapper {
+      border: 2px solid #e2e8f0;
+      border-radius: 12px;
+      overflow: hidden;
+    }
   `;
 
   // --- Auth Check ---
@@ -92,7 +351,6 @@ const InspectorApp = () => {
     const video = videoRef.current
     if (!video) return
     const canvas = document.createElement('canvas')
-    // ضغط السيلفي (تصغير الحجم)
     const scale = 300 / video.videoWidth
     canvas.width = 300
     canvas.height = video.videoHeight * scale
@@ -116,7 +374,6 @@ const InspectorApp = () => {
         img.src = e.target.result
         img.onload = () => {
           const elem = document.createElement('canvas')
-          // ضغط صور المخالفات
           const MAX_WIDTH = 600
           const scaleFactor = MAX_WIDTH / img.width
           elem.width = MAX_WIDTH
@@ -129,7 +386,6 @@ const InspectorApp = () => {
     })
   }
 
-  // --- Handling Answers ---
   const handleAnswerChange = (qIndex, field, value) => {
     setAnswers(prev => ({
       ...prev,
@@ -137,26 +393,13 @@ const InspectorApp = () => {
     }))
   }
 
-  // --- Submit ---
   const handleSubmit = async () => {
-    // 1. Validations
-    if (!geo) {
-      alert('⚠️ يرجى تحديد الموقع أولاً')
-      topRef.current?.scrollIntoView({ behavior: 'smooth' })
-      return
-    }
-    if (!photo) {
-      alert('⚠️ يرجى التقاط صورة سيلفي للتحقق')
-      topRef.current?.scrollIntoView({ behavior: 'smooth' })
-      return
-    }
-    if (!formData.contractor) {
-      alert('⚠️ يرجى كتابة اسم المقاول')
-      return
-    }
+    if (!geo) { alert('⚠️ يرجى تحديد الموقع أولاً'); topRef.current?.scrollIntoView({ behavior: 'smooth' }); return; }
+    if (!photo) { alert('⚠️ يرجى التقاط صورة سيلفي للتحقق'); topRef.current?.scrollIntoView({ behavior: 'smooth' }); return; }
+    if (!formData.contractor) { alert('⚠️ يرجى كتابة اسم المقاول'); return; }
 
     setLoading(true)
-    setBtnText('جاري المعالجة... يرجى الانتظار')
+    setBtnText('جاري المعالجة...')
 
     try {
       const serial = Date.now()
@@ -168,46 +411,37 @@ const InspectorApp = () => {
         google_maps_link: geo,
         verification_photo: photo,
         signature_image: sigPad.current.isEmpty() ? null : sigPad.current.toDataURL('image/png', 0.5),
-        answers: {}, // لتخزين الإجابات "نعم/لا" لعرضها في الجدول
+        answers: {},
         violations: []
       }
 
-      // 2. Processing Questions & Compressing Images
       for (let i = 0; i < qList.length; i++) {
         const qKey = i + 1
-        setBtnText(`جاري ضغط الصور... (${i + 1}/${qList.length})`)
+        setBtnText(`رفع الصور (${i + 1}/${qList.length})`)
 
         const currentAns = answers[qKey] || {}
         const val = currentAns.val || 'N/A'
         const note = currentAns.note || ''
         
-        // حفظ الإجابة للعرض في الجدول
-        payload.answers[qKey] = val
+        payload.answers[qKey] = val === 'N/A' ? 'لا ينطبق' : val
 
-        // معالجة المخالفة (صورة + ملاحظة)
         let imgBase64 = ''
         if (currentAns.file) {
-          try {
-            imgBase64 = await compressImage(currentAns.file)
-          } catch (e) {
-            console.error("Image error", e)
-          }
+          try { imgBase64 = await compressImage(currentAns.file) } catch (e) { console.error(e) }
         }
 
         if (val === 'لا' || note || imgBase64) {
           payload.violations.push({
             q: qList[i],
-            ans: val,
+            ans: val === 'N/A' ? 'لا ينطبق' : val,
             note,
             photo: imgBase64
           })
         }
       }
 
-      setBtnText('جاري الإرسال للسيرفر... 🚀')
-
+      setBtnText('جاري الإرسال...')
       const { error } = await supabase.from('reports').insert([payload])
-
       if (error) throw error
 
       alert('✅ تم إرسال التقرير بنجاح!')
@@ -221,182 +455,197 @@ const InspectorApp = () => {
     }
   }
 
-  if (!user) return <div style={{textAlign:'center', marginTop:'50px'}}>جاري التحميل...</div>
+  if (!user) return <div style={{display:'flex', justifyContent:'center', alignItems:'center', height:'100vh', fontFamily:'Cairo'}}>جاري تحميل النظام...</div>
 
   return (
-    <div className="container" style={{ display: 'block' }}>
+    <div className="app-container">
       <style>{styles}</style>
       
-      {/* Header */}
-      <div className="header" ref={topRef}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <img src="/imge.jpg" height="40" alt="Logo" />
-          <div>
-            <div style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--sec-blue)' }}>
-              المفتش: {user.username}
-            </div>
-            <div 
-              onClick={() => { sessionStorage.clear(); navigate('/'); }} 
-              style={{ color: 'red', fontSize: '10px', cursor: 'pointer' }}
-            >
-              تسجيل خروج
-            </div>
-          </div>
+      {/* Premium Header */}
+      <div className="premium-header" ref={topRef}>
+        <div style={{display:'flex', alignItems:'center', gap:'15px'}}>
+           <div className="inspector-badge">
+             <i className="fa-solid fa-user-shield"></i>
+             <span>{user.username}</span>
+           </div>
+           <button 
+             onClick={() => { sessionStorage.clear(); navigate('/'); }}
+             style={{background:'none', border:'none', color:'rgba(255,255,255,0.7)', cursor:'pointer', fontSize:'18px'}}
+           >
+             <i className="fa-solid fa-arrow-right-from-bracket"></i>
+           </button>
         </div>
-        <div style={{ border: '1px solid var(--sec-blue)', padding: '4px 8px', borderRadius: '6px', color: 'var(--sec-blue)', fontSize: '10px', fontWeight: 'bold' }}>
-          مجموعة السلامة
-        </div>
+        <img src="/imge.jpg" alt="SEC Logo" className="header-logo" />
       </div>
 
-      {/* Verification Card */}
-      <div className="card" style={{ borderRightColor: '#ef4444' }}>
-        <h3 style={{ color: '#b91c1c', marginTop: 0, fontSize: '16px' }}>🛑 إثبات التواجد (إجباري)</h3>
-        
-        <div className="verify-box">
-          {!geo ? (
-            <button className="btn-action" onClick={getGeo}>
-              📍 اضغط لتحديد موقعك
-            </button>
-          ) : (
-            <div>
-              <button className="btn-action" style={{ background: '#059669' }}>
-                ✅ تم تحديد الموقع
-              </button>
-              <div style={{ fontSize: '11px', color: '#666', marginTop: '5px', overflowWrap: 'anywhere' }}>
-                {geo}
-              </div>
-            </div>
-          )}
-        </div>
+      <div style={{padding: '20px 15px'}}>
+        <h2 style={{margin: '0 0 5px 0', color: '#0f172a'}}>نظام السلامة الميداني</h2>
+        <p style={{margin: '0 0 20px 0', color: '#64748b', fontSize: '14px'}}>
+          <i className="fa-regular fa-calendar"></i> {new Date().toLocaleDateString('ar-SA')}
+        </p>
 
-        <div className="verify-box">
-          {!isCamOpen && !photo && (
-            <button className="btn-action" style={{ background: '#2563eb' }} onClick={startCam}>
-              📷 التقاط سيلفي الآن
-            </button>
-          )}
+        {/* Verification Section */}
+        <div className="premium-card">
+          <div className="section-title">
+            <i className="fa-solid fa-fingerprint"></i>
+            إثبات التواجد والتحقق
+          </div>
           
-          {isCamOpen && (
-            <>
-              <video 
-                ref={videoRef} 
-                autoPlay 
-                playsInline 
-                style={{ width: '100%', maxWidth: '250px', borderRadius: '10px', transform: 'scaleX(-1)', background: '#000', display: 'block', margin: '10px auto' }} 
-              />
-              <button className="btn-action" style={{ background: '#dc2626' }} onClick={takeSnap}>
-                التقاط الصورة
-              </button>
-            </>
-          )}
-
-          {photo && (
-            <div style={{ textAlign: 'center' }}>
-               <img src={photo} style={{ width: '120px', height: '120px', borderRadius: '50%', objectFit: 'cover', border: '3px solid #22c55e', margin: '10px auto' }} alt="Selfie" />
-               <br />
-               <button className="btn-action" style={{ background: '#666', width: 'auto', padding: '5px 15px', fontSize: '12px' }} onClick={() => setPhoto(null)}>
-                 إعادة الالتقاط
-               </button>
+          <div className="verify-grid">
+            {/* GPS Card */}
+            <div className={`verify-item ${geo ? 'done' : ''}`} onClick={getGeo}>
+              <i className={`fa-solid ${geo ? 'fa-map-location-dot' : 'fa-location-crosshairs'} verify-icon`}></i>
+              <div style={{fontWeight:'bold', fontSize:'14px'}}>{geo ? 'تم تحديد الموقع' : 'تحديد الموقع'}</div>
+              <div style={{fontSize:'11px', color:'#94a3b8', marginTop:'5px'}}>
+                {geo ? 'إحداثيات دقيقة ✅' : 'اضغط لتفعيل GPS'}
+              </div>
             </div>
-          )}
+
+            {/* Camera Card */}
+            <div className={`verify-item ${photo ? 'done' : ''}`} onClick={photo ? null : startCam}>
+              {isCamOpen ? (
+                <>
+                  <video ref={videoRef} autoPlay playsInline style={{width:'100%', borderRadius:'8px', transform:'scaleX(-1)'}} />
+                  <button onClick={(e) => { e.stopPropagation(); takeSnap(); }} style={{marginTop:'5px', padding:'5px 10px', background:'#ef4444', color:'white', border:'none', borderRadius:'5px'}}>التقاط</button>
+                </>
+              ) : (
+                <>
+                  {photo ? (
+                    <img src={photo} style={{width:'80px', height:'80px', borderRadius:'50%', objectFit:'cover', border:'3px solid #10b981'}} alt="Selfie" />
+                  ) : (
+                    <i className="fa-solid fa-camera verify-icon"></i>
+                  )}
+                  <div style={{fontWeight:'bold', fontSize:'14px', marginTop:'10px'}}>
+                    {photo ? 'تم التقاط الصورة' : 'صورة سيلفي'}
+                  </div>
+                  {photo && <button onClick={() => setPhoto(null)} style={{fontSize:'10px', color:'#ef4444', background:'none', border:'none', marginTop:'5px'}}>إعادة الالتقاط</button>}
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Basic Info Form */}
+        <div className="premium-card">
+          <div className="section-title">
+            <i className="fa-solid fa-file-contract"></i>
+            بيانات التقرير
+          </div>
+          
+          <div className="input-wrapper">
+            <label className="input-label">اسم المقاول</label>
+            <input className="premium-input" placeholder="اكتب اسم الشركة المنفذة..." value={formData.contractor} onChange={(e) => setFormData({...formData, contractor: e.target.value})} />
+            <i className="fa-solid fa-hard-hat input-icon"></i>
+          </div>
+
+          <div className="input-wrapper">
+            <label className="input-label">اسم الاستشاري</label>
+            <input className="premium-input" placeholder="اسم الاستشاري..." value={formData.consultant} onChange={(e) => setFormData({...formData, consultant: e.target.value})} />
+            <i className="fa-solid fa-user-tie input-icon"></i>
+          </div>
+
+          <div className="input-wrapper">
+            <label className="input-label">وصف مكان العمل</label>
+            <input className="premium-input" placeholder="الحي / الشارع / رقم المحطة..." value={formData.location} onChange={(e) => setFormData({...formData, location: e.target.value})} />
+            <i className="fa-solid fa-map-pin input-icon"></i>
+          </div>
+
+          <div className="input-wrapper">
+            <label className="input-label">المستلم</label>
+            <input className="premium-input" placeholder="اسم مستلم العمل..." value={formData.receiver} onChange={(e) => setFormData({...formData, receiver: e.target.value})} />
+            <i className="fa-solid fa-user-check input-icon"></i>
+          </div>
+          
+          <div className="input-wrapper">
+            <label className="input-label">وصف العمل</label>
+            <input className="premium-input" placeholder="صيانة / تركيب / حفر..." value={formData.work_desc} onChange={(e) => setFormData({...formData, work_desc: e.target.value})} />
+            <i className="fa-solid fa-briefcase input-icon"></i>
+          </div>
+        </div>
+
+        {/* Questions List */}
+        <h3 style={{margin:'20px 15px 10px', color:'#0f172a'}}>قائمة الفحص</h3>
+        {qList.map((q, i) => {
+          const qIdx = i + 1
+          const currentVal = answers[qIdx]?.val || 'N/A'
+          const isAnswered = answers[qIdx]?.val && answers[qIdx]?.val !== 'N/A'
+
+          return (
+            <div key={i} className={`question-card ${isAnswered ? 'answered' : ''}`}>
+              <div className="q-text">{qIdx}. {q}</div>
+              
+              <div className="options-container">
+                <div 
+                  className={`option-btn yes ${currentVal === 'نعم' ? 'active' : ''}`}
+                  onClick={() => handleAnswerChange(qIdx, 'val', 'نعم')}
+                >
+                  <i className="fa-solid fa-check"></i> نعم
+                </div>
+                <div 
+                  className={`option-btn no ${currentVal === 'لا' ? 'active' : ''}`}
+                  onClick={() => handleAnswerChange(qIdx, 'val', 'لا')}
+                >
+                  <i className="fa-solid fa-xmark"></i> لا
+                </div>
+                <div 
+                  className={`option-btn na ${currentVal === 'N/A' ? 'active' : ''}`}
+                  onClick={() => handleAnswerChange(qIdx, 'val', 'N/A')}
+                >
+                  لا ينطبق
+                </div>
+              </div>
+
+              <button className="photo-btn" onClick={() => document.getElementById(`file-${qIdx}`).click()}>
+                <i className="fa-solid fa-camera"></i> 
+                {answers[qIdx]?.file ? 'تم إرفاق صورة ✅' : 'إرفاق صورة مخالفة'}
+              </button>
+              <input 
+                type="file" 
+                id={`file-${qIdx}`} 
+                style={{display:'none'}} 
+                accept="image/*"
+                onChange={(e) => handleAnswerChange(qIdx, 'file', e.target.files[0])}
+              />
+              
+              <textarea
+                className="note-input"
+                placeholder="أضف ملاحظاتك هنا..."
+                rows="1"
+                onChange={(e) => handleAnswerChange(qIdx, 'note', e.target.value)}
+              />
+            </div>
+          )
+        })}
+
+        {/* Signature */}
+        <div className="premium-card">
+          <div className="section-title">
+            <i className="fa-solid fa-file-signature"></i>
+            توقيع المستلم
+          </div>
+          <div className="sig-wrapper">
+            <SignatureCanvas 
+                ref={sigPad} 
+                canvasProps={{ width: 600, height: 200, className: 'sig-canvas' }} 
+                backgroundColor="rgb(255, 255, 255)"
+            />
+          </div>
+          <button 
+              onClick={() => sigPad.current.clear()} 
+              style={{marginTop:'10px', color:'#ef4444', background:'none', border:'none', fontWeight:'bold', cursor:'pointer'}}
+          >
+              <i className="fa-solid fa-eraser"></i> مسح التوقيع
+          </button>
         </div>
       </div>
 
-      {/* Basic Data Form */}
-      <div className="card">
-        <h3 style={{ color: 'var(--sec-blue)', marginTop: 0 }}>📝 بيانات التقرير</h3>
-        <label>التاريخ</label>
-        <input type="date" value={formData.date} onChange={(e) => setFormData({...formData, date: e.target.value})} />
-        
-        <label>الاستشاري</label>
-        <input placeholder="اسم الاستشاري" value={formData.consultant} onChange={(e) => setFormData({...formData, consultant: e.target.value})} />
-        
-        <label>المقاول</label>
-        <input placeholder="اسم المقاول" value={formData.contractor} onChange={(e) => setFormData({...formData, contractor: e.target.value})} />
-        
-        <label>المستلم</label>
-        <input placeholder="اسم المستلم" value={formData.receiver} onChange={(e) => setFormData({...formData, receiver: e.target.value})} />
-        
-        <label>الموقع</label>
-        <input placeholder="الموقع" value={formData.location} onChange={(e) => setFormData({...formData, location: e.target.value})} />
-        
-        <label>وصف العمل</label>
-        <input placeholder="وصف العمل" value={formData.work_desc} onChange={(e) => setFormData({...formData, work_desc: e.target.value})} />
-      </div>
-
-      {/* Questions Loop */}
-      {qList.map((q, i) => {
-        const qIdx = i + 1
-        const currentVal = answers[qIdx]?.val || 'N/A' // الافتراضي إذا لم يتم الاختيار
-
-        return (
-          <div key={i} className="card">
-            <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>{qIdx}. {q}</div>
-            
-            <div className="opt-grid">
-              <div 
-                className={`opt-btn ok ${currentVal === 'نعم' ? 'selected' : ''}`}
-                onClick={() => handleAnswerChange(qIdx, 'val', 'نعم')}
-              >
-                نعم
-              </div>
-              <div 
-                className={`opt-btn no ${currentVal === 'لا' ? 'selected' : ''}`}
-                onClick={() => handleAnswerChange(qIdx, 'val', 'لا')}
-              >
-                لا
-              </div>
-              <div 
-                className={`opt-btn na ${currentVal === 'N/A' ? 'selected' : ''}`} // عدلت "لا ينطبق" لـ N/A في الكود للتناسق
-                onClick={() => handleAnswerChange(qIdx, 'val', 'N/A')}
-              >
-                N/A
-              </div>
-            </div>
-
-            <input
-              type="file"
-              accept="image/*"
-              style={{ marginTop: '10px' }}
-              onChange={(e) => handleAnswerChange(qIdx, 'file', e.target.files[0])}
-            />
-            
-            <textarea
-              placeholder="ملاحظة..."
-              rows="2"
-              style={{ height: '40px' }}
-              onChange={(e) => handleAnswerChange(qIdx, 'note', e.target.value)}
-            />
-          </div>
-        )
-      })}
-
-      {/* Signature */}
-      <div className="card">
-        <h3 style={{ color: 'var(--sec-blue)', marginTop: 0 }}>✍️ التوقيع</h3>
-        <SignatureCanvas 
-            ref={sigPad} 
-            canvasProps={{ className: 'sig-pad' }} 
-            backgroundColor="rgb(255, 255, 255)"
-        />
+      <div className="floating-footer">
         <button 
-            onClick={() => sigPad.current.clear()} 
-            style={{ background: '#fee2e2', color: 'red', border: 'none', padding: '5px', width: '100%', marginTop: '5px', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Cairo' }}
-        >
-            مسح التوقيع
-        </button>
-      </div>
-
-      <div style={{ height: '60px' }}></div>
-      
-      <div className="footer" style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: '#fff', padding: '12px', boxShadow: '0 -2px 10px rgba(0,0,0,.1)', zIndex: 2000 }}>
-        <button 
-            className="submit-btn" 
+            className="submit-main-btn" 
             onClick={handleSubmit} 
             disabled={loading}
-            style={{ background: loading ? '#9ca3af' : 'var(--primary-blue)' }}
         >
-          {btnText}
+          {loading ? <i className="fa-solid fa-spinner fa-spin"></i> : <i className="fa-regular fa-paper-plane"></i>} {btnText}
         </button>
       </div>
     </div>
