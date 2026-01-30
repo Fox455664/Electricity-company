@@ -13,18 +13,18 @@ const AdminDashboard = () => {
   
   // State Variables
   const [user, setUser] = useState(null)
-  const [activeTab, setActiveTab] = useState('reports') // 'reports' or 'inspectors'
+  const [activeTab, setActiveTab] = useState('reports')
   const [reports, setReports] = useState([])
   const [inspectorsList, setInspectorsList] = useState([])
   const [searchTerm, setSearchTerm] = useState('')
-  const [expandedReport, setExpandedReport] = useState(null) // ID of expanded report
+  const [expandedReport, setExpandedReport] = useState(null)
   const [modalImage, setModalImage] = useState(null)
   const [loading, setLoading] = useState(true)
 
   // New Inspector Form
   const [newInspectorName, setNewInspectorName] = useState('')
   const [newInspectorPass, setNewInspectorPass] = useState('')
-  const [showPassword, setShowPassword] = useState({}) // For toggling visibility in list
+  const [showPassword, setShowPassword] = useState({})
 
   // --- Styles Injection ---
   const styles = `
@@ -32,7 +32,14 @@ const AdminDashboard = () => {
     .header { background: white; padding: 15px 20px; border-bottom: 4px solid var(--main-orange); display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 100; }
     .logo-box { display: flex; align-items: center; gap: 15px; }
     .dept-badge { border: 2px solid var(--main-blue); color: var(--main-blue); padding: 5px 15px; border-radius: 10px; font-weight: bold; font-size: 13px; text-align: center; background: #f0f9ff; line-height: 1.5; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-    .btn-logout { background: #fee2e2; color: #dc2626; border: none; padding: 10px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 13px; display: flex; flex-direction: column; align-items: center; gap: 5px; }
+    
+    /* تنسيق زر الخروج */
+    .btn-logout { background: #fee2e2; color: #dc2626; border: none; padding: 8px 12px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 12px; display: flex; flex-direction: column; align-items: center; gap: 4px; width: 80px; }
+    
+    /* تنسيق زر التحويل للمفتش (الجديد) */
+    .btn-switch { background: #e0f2fe; color: #0284c7; border: none; padding: 8px 12px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 12px; display: flex; flex-direction: column; align-items: center; gap: 4px; width: 90px; }
+    .btn-switch:hover { background: #bae6fd; }
+
     .nav-tabs { display: flex; gap: 10px; padding: 20px; max-width: 800px; margin: auto; }
     .tab-btn { flex: 1; padding: 14px; border: none; border-radius: 12px; background: white; color: #6b7280; font-weight: bold; font-size: 16px; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px; }
     .tab-btn.active { background: var(--main-blue); color: white; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,90,143,0.2); }
@@ -60,7 +67,6 @@ const AdminDashboard = () => {
     #imgModal img { max-width: 95%; max-height: 80vh; border-radius: 8px; }
     .close-modal { position: absolute; top: 20px; right: 20px; color: white; font-size: 30px; cursor: pointer; }
     
-    /* Responsive tweaks for header */
     @media (max-width: 600px) {
       .header { flex-wrap: wrap; gap: 10px; justify-content: center; }
       .dept-badge { order: 3; width: 100%; }
@@ -162,8 +168,6 @@ const AdminDashboard = () => {
   // --- PDF Generation Logic ---
   const generatePDF = (r) => {
     const container = document.createElement('div')
-    
-    // استخدام الصورة المحلية في الـ PDF
     const logoUrl = "/imge.jpg";
 
     let tableRows = ''
@@ -271,7 +275,6 @@ const AdminDashboard = () => {
     <>
       <style>{styles}</style>
       
-      {/* Modal for Images */}
       {modalImage && (
         <div id="imgModal" onClick={() => setModalImage(null)}>
           <span className="close-modal">&times;</span>
@@ -282,7 +285,6 @@ const AdminDashboard = () => {
       {/* Header */}
       <div className="header">
         <div className="logo-box">
-            {/* اللوجو المحلي */}
             <img 
                 src="/imge.jpg" 
                 alt="Saudi Electricity Company" 
@@ -300,16 +302,27 @@ const AdminDashboard = () => {
             إدارة ضواحي الرياض
         </div>
 
-        <button 
-          className="btn-logout" 
-          onClick={() => {
-            sessionStorage.clear()
-            navigate('/')
-          }}
-        >
-          <i className="fa-solid fa-power-off" style={{fontSize: '18px'}}></i> 
-          <span>خروج</span>
-        </button>
+        {/* أزرار الإجراءات (خروج + الذهاب للمفتش) */}
+        <div style={{ display: 'flex', gap: '8px' }}>
+            <button 
+                className="btn-switch" 
+                onClick={() => navigate('/inspector')}
+            >
+                <i className="fa-solid fa-clipboard-check" style={{fontSize: '18px'}}></i> 
+                <span>صفحة المفتش</span>
+            </button>
+
+            <button 
+                className="btn-logout" 
+                onClick={() => {
+                    sessionStorage.clear()
+                    navigate('/')
+                }}
+            >
+                <i className="fa-solid fa-power-off" style={{fontSize: '18px'}}></i> 
+                <span>خروج</span>
+            </button>
+        </div>
       </div>
 
       {/* Tabs */}
