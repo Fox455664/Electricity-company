@@ -255,17 +255,5 @@ const Login = () => {
           </button>
         </form>
 
-        {/* Demo Credentials Hint */}
-        <div className="footer-info">
-          <p style={{marginBottom:'5px'}}>بيانات الدخول التجريبية:</p>
-          <div style={{display:'flex', justifyContent:'center', gap:'15px', color:'#64748b'}}>
-             <span><i className="fa-solid fa-user-shield"></i> admin / admin2025</span>
-             <span><i className="fa-solid fa-helmet-safety"></i> fox / 12</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
 
 export default Login
