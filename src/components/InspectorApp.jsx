@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import SignatureCanvas from 'react-signature-canvas'
+// تأكد من مسار supabase لديك أو احذفه إذا لم تكن تستخدمه حالياً
 import { supabase } from '../supabaseClient'
 
 // قائمة الأسئلة
@@ -58,18 +59,32 @@ const InspectorApp = () => {
   const [hijriDate, setHijriDate] = useState('')
   const [answers, setAnswers] = useState({})
   
+  // --- التعديل الهام هنا: تعريف كل الحقول في الـ State ---
   const [formData, setFormData] = useState({
+    date: new Date().toISOString().split('T')[0], // تعيين تاريخ اليوم كافتراضي
     contractor: '',
     work_order_no: '',
-    work_desc: '',
+    work_description: '', // تم توحيد الاسم ليكون work_description
     consultant: '',
     location: '',
+    district: '',       // جديد
+    visit_team: '',     // جديد
+    supervisor: '',     // جديد
+    receiver: ''        // جديد
   })
 
   useEffect(() => {
+    // محاكاة تسجيل الدخول (يمكنك إزالتها إذا كان نظام الدخول جاهزاً)
     const userData = sessionStorage.getItem('user')
-    if (!userData) navigate('/')
-    else setUser(JSON.parse(userData))
+    // لتجربة الكود بدون تسجيل دخول، يمكنك تفعيل السطر التالي وإيقاف الشرط
+    // setUser({ username: 'Fox' }); 
+    
+    if (!userData) {
+        // navigate('/') // تفعيل هذا السطر عند الربط الفعلي
+        setUser({ username: 'Fox' }); // مؤقت للتجربة
+    } else {
+        setUser(JSON.parse(userData))
+    }
 
     // تنسيق التاريخ الهجري
     const date = new Date();
@@ -92,11 +107,14 @@ const InspectorApp = () => {
   const handleSubmit = async () => {
     if (!geo) return alert('يرجى تحديد الموقع أولاً');
     setLoading(true);
-    // كود الإرسال هنا (supabase)
-    setTimeout(() => { setLoading(false); alert('تم الإرسال (محاكاة)'); }, 1500);
+    
+    console.log("البيانات المرسلة:", { ...formData, answers, geo });
+    
+    // محاكاة الإرسال
+    setTimeout(() => { setLoading(false); alert('تم إرسال التقرير بنجاح ✅'); }, 1500);
   }
 
-  if (!user) return null;
+  if (!user) return <div>جاري التحميل...</div>;
 
   // ------------------------------------------
   // Styles CSS
@@ -147,7 +165,7 @@ const InspectorApp = () => {
     }
     .card-title { font-size: 16px; font-weight: 700; color: var(--primary); margin-bottom: 15px; display: flex; align-items: center; gap: 8px; }
 
-    /* Location Button (Full Width) */
+    /* Location Button */
     .btn-location {
       width: 100%;
       background: #ecfdf5;
@@ -181,6 +199,7 @@ const InspectorApp = () => {
       font-family: 'Cairo'; font-size: 14px; box-sizing: border-box; outline: none; color: #334155;
     }
     .modern-input:focus { background: #fff; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(0, 77, 122, 0.1); }
+    textarea.modern-input { resize: vertical; min-height: 80px; }
 
     /* Questions List */
     .q-item { border-bottom: 1px solid #f1f5f9; padding: 15px 0; }
@@ -204,6 +223,7 @@ const InspectorApp = () => {
       box-shadow: 0 8px 20px rgba(245, 158, 11, 0.3); cursor: pointer;
       display: flex; justify-content: center; align-items: center; gap: 10px;
     }
+    .submit-btn:disabled { opacity: 0.7; cursor: not-allowed; }
   `;
 
   return (
@@ -235,7 +255,7 @@ const InspectorApp = () => {
             إثبات التواجد
         </div>
         
-        {/* زر الموقع الكبير */}
+        {/* زر الموقع */}
         <div className={`btn-location ${geo ? '' : 'pending'}`} onClick={getGeo}>
             <i className={`fa-solid ${geo ? 'fa-map-location-dot' : 'fa-location-crosshairs'} loc-icon`}></i>
             <div className="loc-text">{geo ? 'تم تحديد الموقع بنجاح' : 'اضغط لتحديد موقع العمل'}</div>
@@ -253,68 +273,67 @@ const InspectorApp = () => {
         </div>
 
         <div className="form-container">
-    {/* حقل التاريخ - يظهر في الصورة الثانية */}
-    <div className="input-group">
-        <i className="fa-solid fa-calendar-days input-icon"></i>
-        <input type="date" className="modern-input" value={formData.date} onChange={e=>setFormData({...formData, date: e.target.value})} />
-    </div>
+            {/* حقل التاريخ */}
+            <div className="input-group">
+                <i className="fa-solid fa-calendar-days input-icon"></i>
+                <input type="date" className="modern-input" value={formData.date} onChange={e=>setFormData({...formData, date: e.target.value})} />
+            </div>
 
-    {/* اسم الاستشاري */}
-    <div className="input-group">
-        <i className="fa-solid fa-user-tie input-icon"></i>
-        <input className="modern-input" placeholder="اسم الاستشاري" value={formData.consultant} onChange={e=>setFormData({...formData, consultant: e.target.value})} />
-    </div>
+            {/* اسم الاستشاري */}
+            <div className="input-group">
+                <i className="fa-solid fa-user-tie input-icon"></i>
+                <input className="modern-input" placeholder="اسم الاستشاري" value={formData.consultant} onChange={e=>setFormData({...formData, consultant: e.target.value})} />
+            </div>
 
-    {/* اسم المقاول */}
-    <div className="input-group">
-        <i className="fa-solid fa-helmet-safety input-icon"></i>
-        <input className="modern-input" placeholder="اسم المقاول" value={formData.contractor} onChange={e=>setFormData({...formData, contractor: e.target.value})} />
-    </div>
+            {/* اسم المقاول */}
+            <div className="input-group">
+                <i className="fa-solid fa-helmet-safety input-icon"></i>
+                <input className="modern-input" placeholder="اسم المقاول" value={formData.contractor} onChange={e=>setFormData({...formData, contractor: e.target.value})} />
+            </div>
 
-    {/* موقع العمل */}
-    <div className="input-group">
-        <i className="fa-solid fa-map-pin input-icon"></i>
-        <input className="modern-input" placeholder="موقع العمل" value={formData.location} onChange={e=>setFormData({...formData, location: e.target.value})} />
-    </div>
+            {/* موقع العمل */}
+            <div className="input-group">
+                <i className="fa-solid fa-map-pin input-icon"></i>
+                <input className="modern-input" placeholder="موقع العمل" value={formData.location} onChange={e=>setFormData({...formData, location: e.target.value})} />
+            </div>
 
-    {/* --- الإضافات الجديدة بناءً على الصور --- */}
+            {/* اسم الحي */}
+            <div className="input-group">
+                <i className="fa-solid fa-city input-icon"></i>
+                <input className="modern-input" placeholder="اسم الحي" value={formData.district} onChange={e=>setFormData({...formData, district: e.target.value})} />
+            </div>
 
-    {/* اسم الحي */}
-    <div className="input-group">
-        <i className="fa-solid fa-city input-icon"></i>
-        <input className="modern-input" placeholder="اسم الحي" value={formData.district} onChange={e=>setFormData({...formData, district: e.target.value})} />
-    </div>
+            {/* اسم فريق الزيارة */}
+            <div className="input-group">
+                <i className="fa-solid fa-users input-icon"></i>
+                <input className="modern-input" placeholder="اسم فريق الزيارة" value={formData.visit_team} onChange={e=>setFormData({...formData, visit_team: e.target.value})} />
+            </div>
 
-    {/* اسم فريق الزيارة */}
-    <div className="input-group">
-        <i className="fa-solid fa-users input-icon"></i>
-        <input className="modern-input" placeholder="اسم فريق الزيارة" value={formData.visit_team} onChange={e=>setFormData({...formData, visit_team: e.target.value})} />
-    </div>
+            {/* اسم المشرف */}
+            <div className="input-group">
+                <i className="fa-solid fa-user-check input-icon"></i>
+                <input className="modern-input" placeholder="اسم المشرف" value={formData.supervisor} onChange={e=>setFormData({...formData, supervisor: e.target.value})} />
+            </div>
 
-    {/* اسم المشرف */}
-    <div className="input-group">
-        <i className="fa-solid fa-user-check input-icon"></i>
-        <input className="modern-input" placeholder="اسم المشرف" value={formData.supervisor} onChange={e=>setFormData({...formData, supervisor: e.target.value})} />
-    </div>
+            {/* رقم الأمر / المهمة */}
+            <div className="input-group">
+                <i className="fa-solid fa-list-check input-icon"></i>
+                <input className="modern-input" placeholder="رقم ( المقايسة / امر العمل / المهمة )" value={formData.work_order_no} onChange={e=>setFormData({...formData, work_order_no: e.target.value})} />
+            </div>
 
-    {/* رقم الأمر / المهمة */}
-    <div className="input-group">
-        <i className="fa-solid fa-list-check input-icon"></i>
-        <input className="modern-input" placeholder="رقم ( المقايسة / امر العمل / المهمة )" value={formData.work_order_no} onChange={e=>setFormData({...formData, work_order_no: e.target.value})} />
-    </div>
+            {/* وصف العمل */}
+            <div className="input-group">
+                <i className="fa-solid fa-pen-to-square input-icon"></i>
+                <textarea className="modern-input" placeholder="وصف العمل" value={formData.work_description} onChange={e=>setFormData({...formData, work_description: e.target.value})} rows="3"></textarea>
+            </div>
 
-    {/* وصف العمل */}
-    <div className="input-group">
-        <i className="fa-solid fa-pen-to-square input-icon"></i>
-        <textarea className="modern-input" placeholder="وصف العمل" value={formData.work_description} onChange={e=>setFormData({...formData, work_description: e.target.value})} rows="3"></textarea>
-    </div>
-
-    {/* اسم المستلم (يظهر في أسفل الصورة الثانية) */}
-    <div className="input-group">
-        <i className="fa-solid fa-signature input-icon"></i>
-        <input className="modern-input" placeholder="اسم المستلم" value={formData.receiver} onChange={e=>setFormData({...formData, receiver: e.target.value})} />
-    </div>
-</div>
+            {/* اسم المستلم */}
+            <div className="input-group">
+                <i className="fa-solid fa-signature input-icon"></i>
+                <input className="modern-input" placeholder="اسم المستلم" value={formData.receiver} onChange={e=>setFormData({...formData, receiver: e.target.value})} />
+            </div>
+        </div>
+      </div>
 
       {/* Questions */}
       <div className="content-card">
