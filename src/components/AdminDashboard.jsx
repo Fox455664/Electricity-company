@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import html2pdf from 'html2pdf.js'
 import { supabase } from '../supabaseClient'
 
-// قائمة الأسئلة الكاملة كما وردت في الكود الخاص بك
+// قائمة الأسئلة الكاملة
 const fullQuestionsList = [
   "تصريح العمل الأساسي والثانوي متواجد بموقع العمل", "اجتماع ما قبل البدء بالعمل متواجد بموقع العمل", "نموذج فريق العمل متواجد بموقع العمل (مذكور رقم المقايسة – وصف العمل – رقم التصريح – توقيع مشرف الكهرب والشركة)", "إجراءات العمل الآمن وتقييم المخاطر وتوفرها بلغات مناسبة", "إلمام المستلم وفريق العمل بإجراءات العمل الآمن وتقييم المخاطر للمهمة", "ملاحظات", "بطاقة تعميد المصدر والمستلم والعامل المشارك سارية وبصلاحيات مناسبة للعمل", "تأهيل سائق المعدات (سائق ونش – سلة هوائية -........)", "المستلم متواجد بموقع العمل", "وضع أقفال السلامة و البطاقات التحذيرية و إكتمال بيانات التواصل", "التأكد من تركيب الأرضي المتنقل من الجهتين", "التأكد من فعالية جهاز كشف الجهد التستر", "التأكد من تواجد نموذج فحص المركبة والعدد والادوات متواجد شهادة المسعف والمكافح وفحص المركبة والباركود الخاص بالخطط", "نماذج الفحص", "نموذج فحص المركبة", "نموذج فحص العدد والادوات", "شهادة المسعف", "شهادة المكافح", "شهادة tuv", "QR Code", "فحص معدات الرفع و الحفر من قبل طرف ثالث (تى يو فى)", "التأكد من مطابقة السلات للمواصفات ( كفرات – زيوت – كسور – حزام الأمان – تكدس مواد .. الخ)", "التأكد من سلامة خطاف الونش واحبال الرفع", "طفاية حريق سليمة ومفحوصة وسلامة استكر الفحص", "شنطة إسعافات مكتملة ومفحوصة", "التأكد من تركيب الأرضي للسيارات", "الحمل الأقصى محدد بوضوح على جميع معدات الرفع", "مهام الوقاية الشخصية سليمة (بسؤال الموظف والتفتيش علية) خوذة - ملابس – حذاء", "التفتيش على القفاز المطاطي (33000 – 13000 – 1000) ك.ف.أ", "الخوذة الكهربائية مزودة بحامى وجة", "أحزمة السلامة مرقمة وسليمة", "استخدام حواجز حماية سليمة وكافية و شريط تحذيري", "كفاية اللوحات الإرشادية المرورية", "الترميز بالألوان حسب الشهر للعدد والأدوات وأدوات السلامة", "تخزين أسطوانات الغاز وأسطوانات الاكسجين واللحام وترميزها", "وجود أغطية الحماية لأسطوانات الغاز والأكسجين", "ليات الاوكسي استيلين لا يوجد بها تشققات او تالفة", "سلامة المنظم والعدادات", "وجود شعار المقاول على المركبات والمعدات", "تم ازالة المخلفات بعد الانتهاء من العمل", "خطط متعلقة بتصاريح العمل", "خطة الطوارئ", "خطة المنع من السقوط", "خطة الإنقاذ في العمل على المرتفعات", "خطة رفع الأحمال الحرجة", "إجراء وملصقات حماية السمع", "ملصقات العمل على مرتفعات اوملصق أغراض متساقطة"
 ];
@@ -26,15 +26,15 @@ const AdminDashboard = () => {
   const [newInspectorPass, setNewInspectorPass] = useState('')
   const [showPassword, setShowPassword] = useState({}) // For toggling visibility in list
 
-  // --- Styles Injection (To keep it in one file as requested) ---
+  // --- Styles Injection ---
   const styles = `
     :root { --main-blue: #005a8f; --main-orange: #f28b00; --bg: #f3f4f6; --text: #1f2937; --danger: #ef4444; }
     .header { background: white; padding: 15px 20px; border-bottom: 4px solid var(--main-orange); display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 100; }
-    .logo-box { display: flex; align-items: center; gap: 10px; }
-    .dept-badge { border: 2px solid var(--main-blue); color: var(--main-blue); padding: 5px 15px; border-radius: 10px; font-weight: bold; font-size: 12px; text-align: center; background: #f0f9ff; line-height: 1.5; }
-    .btn-logout { background: #fee2e2; color: #dc2626; border: none; padding: 8px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 13px; }
+    .logo-box { display: flex; align-items: center; gap: 15px; }
+    .dept-badge { border: 2px solid var(--main-blue); color: var(--main-blue); padding: 5px 15px; border-radius: 10px; font-weight: bold; font-size: 13px; text-align: center; background: #f0f9ff; line-height: 1.5; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+    .btn-logout { background: #fee2e2; color: #dc2626; border: none; padding: 10px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 13px; display: flex; flex-direction: column; align-items: center; gap: 5px; }
     .nav-tabs { display: flex; gap: 10px; padding: 20px; max-width: 800px; margin: auto; }
-    .tab-btn { flex: 1; padding: 14px; border: none; border-radius: 12px; background: white; color: #6b7280; font-weight: bold; font-size: 15px; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .tab-btn { flex: 1; padding: 14px; border: none; border-radius: 12px; background: white; color: #6b7280; font-weight: bold; font-size: 16px; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px; }
     .tab-btn.active { background: var(--main-blue); color: white; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,90,143,0.2); }
     .section { animation: fadeIn 0.4s ease; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -59,6 +59,12 @@ const AdminDashboard = () => {
     #imgModal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; display: flex; justify-content: center; align-items: center; }
     #imgModal img { max-width: 95%; max-height: 80vh; border-radius: 8px; }
     .close-modal { position: absolute; top: 20px; right: 20px; color: white; font-size: 30px; cursor: pointer; }
+    
+    /* Responsive tweaks for header */
+    @media (max-width: 600px) {
+      .header { flex-wrap: wrap; gap: 10px; justify-content: center; }
+      .dept-badge { order: 3; width: 100%; }
+    }
   `;
 
   // --- Auth & Initial Load ---
@@ -78,7 +84,7 @@ const AdminDashboard = () => {
     }
   }, [])
 
-  // --- Data Fetching (Supabase Replacement for Redis) ---
+  // --- Data Fetching ---
   const fetchReports = async () => {
     setLoading(true)
     try {
@@ -97,11 +103,10 @@ const AdminDashboard = () => {
 
   const fetchInspectors = async () => {
     try {
-      // نفترض أن جدول users يحتوي على عمود role
       const { data, error } = await supabase
         .from('users')
         .select('*')
-        .neq('role', 'admin') // استبعاد الأدمن
+        .neq('role', 'admin')
       if (error) throw error
       setInspectorsList(data || [])
     } catch (err) {
@@ -154,29 +159,24 @@ const AdminDashboard = () => {
     setShowPassword(prev => ({ ...prev, [username]: !prev[username] }))
   }
 
-  // --- PDF Generation Logic (Replicating the HTML version) ---
+  // --- PDF Generation Logic ---
   const generatePDF = (r) => {
     const container = document.createElement('div')
     
-    // بناء صفوف الجدول بناءً على الإجابات المخزنة (أو الافتراضية إذا لم تكن موجودة)
+    // استخدام الصورة المحلية في الـ PDF
+    const logoUrl = "/imge.jpg";
+
     let tableRows = ''
     fullQuestionsList.forEach((q, i) => {
-      // نفترض أن الإجابات مخزنة في r.answers أو يمكن استنتاجها من r.violations
-      // ملاحظة: في كود InspectorApp السابق، لم يتم حفظ answers بشكل صريح، فقط violations.
-      // لكي يعمل هذا الكود بدقة، يجب تحديث InspectorApp لحفظ answers.
-      // هنا سنحاول العثور على الإجابة من المخالفات، وإلا نعتبرها "نعم" افتراضياً أو "N/A"
-      
-      let ans = "نعم" // الافتراضي
+      let ans = "نعم" 
       let color = "#16a34a"
 
-      // البحث في المخالفات
       const violation = r.violations?.find(v => v.q === q)
       if (violation) {
         ans = violation.ans
         color = "#dc2626"
       }
       
-      // إذا كان هناك حقل answers محفوظ (للمستقبل)
       if (r.answers && r.answers[i+1]) {
           ans = r.answers[i+1].val || r.answers[i+1]
           if(ans === 'لا') color = "#dc2626"
@@ -191,7 +191,6 @@ const AdminDashboard = () => {
         </tr>`
     })
 
-    // بناء قسم المخالفات
     let violationsHTML = ''
     if (r.violations && r.violations.length > 0) {
       let vCards = ''
@@ -210,9 +209,12 @@ const AdminDashboard = () => {
 
     const content = `
       <div style="font-family:'Cairo',sans-serif; padding:20px; direction:rtl; width:100%;">
-        <div style="border-bottom:4px solid #f28b00; padding-bottom:15px; margin-bottom:20px; display:flex; justify-content:space-between;">
-            <div><h2 style="color:#005a8f;">تقرير تفتيش سلامة</h2><p>الشركة السعودية للكهرباء</p></div>
-            <!-- يمكنك وضع شعار هنا -->
+        <div style="border-bottom:4px solid #f28b00; padding-bottom:15px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center;">
+            <div>
+                <h2 style="color:#005a8f; margin:0;">تقرير تفتيش سلامة</h2>
+                <p style="margin:5px 0;">إدارة ضواحي الرياض</p>
+            </div>
+            <img src="${logoUrl}" style="height:60px;">
         </div>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; font-size:12px; margin-bottom:20px;">
              <div><b>رقم التقرير:</b> ${r.serial}</div>
@@ -280,13 +282,24 @@ const AdminDashboard = () => {
       {/* Header */}
       <div className="header">
         <div className="logo-box">
-          {/* يمكنك إضافة شعار هنا */}
-          <div>
-            <div style={{ fontWeight: 'bold', color: 'var(--main-blue)', fontSize: '15px' }}>لوحة الرقابة</div>
-            <div style={{ fontSize: '11px', color: 'var(--main-orange)' }}>إدارة ضواحي الرياض</div>
-          </div>
+            {/* اللوجو المحلي */}
+            <img 
+                src="/imge.jpg" 
+                alt="Saudi Electricity Company" 
+                style={{ height: '60px', objectFit:'contain' }}
+            />
+            <div>
+                <div style={{ fontWeight: 'bold', color: 'var(--main-blue)', fontSize: '18px' }}>لوحة الرقابة</div>
+                <div style={{ fontSize: '12px', color: 'var(--main-orange)', fontWeight: 'bold' }}>إدارة ضواحي الرياض</div>
+            </div>
         </div>
-        <div className="dept-badge">مجموعة السلامة<br />إدارة ضواحي الرياض</div>
+        
+        <div className="dept-badge">
+            مجموعة السلامة
+            <br />
+            إدارة ضواحي الرياض
+        </div>
+
         <button 
           className="btn-logout" 
           onClick={() => {
@@ -294,7 +307,8 @@ const AdminDashboard = () => {
             navigate('/')
           }}
         >
-          <i className="fa-solid fa-power-off"></i> خروج
+          <i className="fa-solid fa-power-off" style={{fontSize: '18px'}}></i> 
+          <span>خروج</span>
         </button>
       </div>
 
@@ -403,10 +417,8 @@ const AdminDashboard = () => {
                       
                       {/* Questions List Logic for Detail View */}
                       {fullQuestionsList.map((q, i) => {
-                        // محاولة جلب الإجابة من answers إذا وجدت، أو افتراض N/A
                         const answerObj = r.answers ? r.answers[i+1] : null;
                         const ans = answerObj ? (answerObj.val || answerObj) : "N/A";
-                        // إذا لم يوجد answer object ولكن يوجد violation، نعرض "لا"
                         const isViolation = r.violations?.some(v => v.q === q);
                         const displayAns = isViolation ? "لا" : (ans === "N/A" && !isViolation ? "نعم" : ans);
                         
