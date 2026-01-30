@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import SignatureCanvas from 'react-signature-canvas'
 import { supabase } from '../supabaseClient'
 
-// القائمة المعدلة (تم تحديث البند 3 وحذف البنود السابقة)
+// القائمة المعدلة (شاملة التعديلات الجديدة: TUV وصور البطاقات)
 const qList = [
     "تصريح العمل الأساسي والثانوي متواجد بموقع العمل", 
     "اجتماع ما قبل البدء بالعمل متواجد بموقع العمل", 
@@ -20,8 +20,8 @@ const qList = [
     "نموذج فحص المركبة", 
     "شهادة المسعف", 
     "شهادة المكافح", 
-    "شهادة tuv", 
-    "فحص معدات الرفع و الحفر من قبل طرف ثالث (تى يو فى)", 
+    "شهادة TUV السائق", 
+    "فحص TUV المعدات", 
     "التأكد من مطابقة السلات للمواصفات ( كفرات – زيوت – كسور – حزام الأمان – تكدس مواد .. الخ)", 
     "التأكد من سلامة خطاف الونش واحبال الرفع", 
     "طفاية حريق سليمة ومفحوصة وسلامة استكر الفحص", 
@@ -44,7 +44,8 @@ const qList = [
     "خطة المنع من السقوط",
     "خطة الإنقاذ في العمل على المرتفعات", 
     "خطة رفع الأحمال الحرجة", 
-    "ملصقات العمل على مرتفعات اوملصق أغراض متساقطة"
+    "ملصقات العمل على مرتفعات اوملصق أغراض متساقطة",
+    "صور البطاقات"
 ];
 
 const InspectorApp = () => {
@@ -98,7 +99,7 @@ const InspectorApp = () => {
 
     .app-container {
       width: 100%;
-      max-width: 900px; /* Increased width for desktop */
+      max-width: 900px;
       margin: 0 auto;
       padding-bottom: 120px;
     }
@@ -143,7 +144,7 @@ const InspectorApp = () => {
       background: var(--card-bg);
       border-radius: var(--border-radius);
       padding: 20px;
-      margin: 15px; /* Reduced margin to fill screen better on mobile */
+      margin: 15px;
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
       border: 1px solid #e2e8f0;
     }
@@ -191,7 +192,7 @@ const InspectorApp = () => {
       width: 100%; padding: 14px 16px; padding-right: 40px;
       border: 1px solid #e2e8f0; border-radius: 10px;
       font-size: 15px; font-family: 'Cairo', sans-serif; background: #f8fafc;
-      box-sizing: border-box; /* Fix width issues */
+      box-sizing: border-box;
     }
     .input-icon { position: absolute; top: 38px; left: 15px; color: #94a3b8; }
 
@@ -383,7 +384,7 @@ const InspectorApp = () => {
         timestamp: new Date().toLocaleString('ar-SA'),
         ...formData,
         google_maps_link: geo,
-        verification_photo: null, // No Selfie needed
+        verification_photo: null,
         signature_image: sigPad.current.isEmpty() ? null : sigPad.current.toDataURL('image/png', 0.5),
         answers: {},
         violations: []
