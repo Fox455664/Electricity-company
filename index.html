@@ -4,11 +4,23 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <!-- عنوان الموقع -->
     <title>نظام السلامة الميداني</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <!-- 1. ربط خط Cairo من Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- 2. ربط مكتبة الأيقونات FontAwesome (مهمة جداً للأزرار) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   </head>
   <body>
+    <!-- عنصر الجذر الذي يتم تحميل تطبيق React بداخله -->
     <div id="root"></div>
+    
+    <!-- ملف الجافاسكريبت الرئيسي (نقطة دخول Vite) -->
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
