@@ -3,9 +3,55 @@ import { useNavigate } from 'react-router-dom'
 import SignatureCanvas from 'react-signature-canvas'
 import { supabase } from '../supabaseClient'
 
-// القائمة الكاملة للأسئلة
+// القائمة المعدلة (تم حذف البنود: 13, 14, 16, 20, 38, 41, 46)
 const qList = [
-    "تصريح العمل الأساسي والثانوي متواجد بموقع العمل", "اجتماع ما قبل البدء بالعمل متواجد بموقع العمل", "نموذج فريق العمل متواجد بموقع العمل (مذكور رقم المقايسة – وصف العمل – رقم التصريح – توقيع مشرف الكهرب والشركة)", "إجراءات العمل الآمن وتقييم المخاطر وتوفرها بلغات مناسبة", "إلمام المستلم وفريق العمل بإجراءات العمل الآمن وتقييم المخاطر للمهمة", "ملاحظات", "بطاقة تعميد المصدر والمستلم والعامل المشارك سارية وبصلاحيات مناسبة للعمل", "تأهيل سائق المعدات (سائق ونش – سلة هوائية -........)", "المستلم متواجد بموقع العمل", "وضع أقفال السلامة و البطاقات التحذيرية و إكتمال بيانات التواصل", "التأكد من تركيب الأرضي المتنقل من الجهتين", "التأكد من فعالية جهاز كشف الجهد التستر", "التأكد من تواجد نموذج فحص المركبة والعدد والادوات متواجد شهادة المسعف والمكافح وفحص المركبة والباركود الخاص بالخطط", "نماذج الفحص", "نموذج فحص المركبة", "نموذج فحص العدد والادوات", "شهادة المسعف", "شهادة المكافح", "شهادة tuv", "QR Code", "فحص معدات الرفع و الحفر من قبل طرف ثالث (تى يو فى)", "التأكد من مطابقة السلات للمواصفات ( كفرات – زيوت – كسور – حزام الأمان – تكدس مواد .. الخ)", "التأكد من سلامة خطاف الونش واحبال الرفع", "طفاية حريق سليمة ومفحوصة وسلامة استكر الفحص", "شنطة إسعافات مكتملة ومفحوصة", "التأكد من تركيب الأرضي للسيارات", "الحمل الأقصى محدد بوضوح على جميع معدات الرفع", "مهام الوقاية الشخصية سليمة (بسؤال الموظف والتفتيش علية) خوذة - ملابس – حذاء", "التفتيش على القفاز المطاطي (33000 – 13000 – 1000) ك.ف.أ", "الخوذة الكهربائية مزودة بحامى وجة", "أحزمة السلامة مرقمة وسليمة", "استخدام حواجز حماية سليمة وكافية و شريط تحذيري", "كفاية اللوحات الإرشادية المرورية", "الترميز بالألوان حسب الشهر للعدد والأدوات وأدوات السلامة", "تخزين أسطوانات الغاز وأسطوانات الاكسجين واللحام وترميزها", "وجود أغطية الحماية لأسطوانات الغاز والأكسجين", "ليات الاوكسي استيلين لا يوجد بها تشققات او تالفة", "سلامة المنظم والعدادات", "وجود شعار المقاول على المركبات والمعدات", "تم ازالة المخلفات بعد الانتهاء من العمل", "خطط متعلقة بتصاريح العمل", "خطة الطوارئ", "خطة المنع من السقوط", "خطة الإنقاذ في العمل على المرتفعات", "خطة رفع الأحمال الحرجة", "إجراء وملصقات حماية السمع", "ملصقات العمل على مرتفعات اوملصق أغراض متساقطة"
+    "تصريح العمل الأساسي والثانوي متواجد بموقع العمل", 
+    "اجتماع ما قبل البدء بالعمل متواجد بموقع العمل", 
+    "نموذج فريق العمل متواجد بموقع العمل (مذكور رقم المقايسة – وصف العمل – رقم التصريح – توقيع مشرف الكهرب والشركة)", 
+    "إجراءات العمل الآمن وتقييم المخاطر وتوفرها بلغات مناسبة", 
+    "إلمام المستلم وفريق العمل بإجراءات العمل الآمن وتقييم المخاطر للمهمة", 
+    "ملاحظات", 
+    "بطاقة تعميد المصدر والمستلم والعامل المشارك سارية وبصلاحيات مناسبة للعمل", 
+    "تأهيل سائق المعدات (سائق ونش – سلة هوائية -........)", 
+    "المستلم متواجد بموقع العمل", 
+    "وضع أقفال السلامة و البطاقات التحذيرية و إكتمال بيانات التواصل", 
+    "التأكد من تركيب الأرضي المتنقل من الجهتين", 
+    "التأكد من فعالية جهاز كشف الجهد التستر", 
+    // تم حذف 13: التأكد من تواجد نموذج فحص المركبة...
+    // تم حذف 14: نماذج الفحص
+    "نموذج فحص المركبة", // كان رقم 15
+    // تم حذف 16: نموذج فحص العدد والادوات
+    "شهادة المسعف", 
+    "شهادة المكافح", 
+    "شهادة tuv", 
+    // تم حذف 20: QR Code
+    "فحص معدات الرفع و الحفر من قبل طرف ثالث (تى يو فى)", 
+    "التأكد من مطابقة السلات للمواصفات ( كفرات – زيوت – كسور – حزام الأمان – تكدس مواد .. الخ)", 
+    "التأكد من سلامة خطاف الونش واحبال الرفع", 
+    "طفاية حريق سليمة ومفحوصة وسلامة استكر الفحص", 
+    "شنطة إسعافات مكتملة ومفحوصة", 
+    "التأكد من تركيب الأرضي للسيارات", 
+    "الحمل الأقصى محدد بوضوح على جميع معدات الرفع", 
+    "مهام الوقاية الشخصية سليمة (بسؤال الموظف والتفتيش علية) خوذة - ملابس – حذاء", 
+    "التفتيش على القفاز المطاطي (33000 – 13000 – 1000) ك.ف.أ", 
+    "الخوذة الكهربائية مزودة بحامى وجة", 
+    "أحزمة السلامة مرقمة وسليمة", 
+    "استخدام حواجز حماية سليمة وكافية و شريط تحذيري", 
+    "كفاية اللوحات الإرشادية المرورية", 
+    "الترميز بالألوان حسب الشهر للعدد والأدوات وأدوات السلامة", 
+    "تخزين أسطوانات الغاز وأسطوانات الاكسجين واللحام وترميزها", 
+    "وجود أغطية الحماية لأسطوانات الغاز والأكسجين", 
+    "ليات الاوكسي استيلين لا يوجد بها تشققات او تالفة", 
+    "سلامة المنظم والعدادات", 
+    "وجود شعار المقاول على المركبات والمعدات", 
+    // تم حذف 38: تم ازالة المخلفات...
+    "خطط متعلقة بتصاريح العمل", 
+    "خطة المنع من السقوط",
+    // تم حذف 41: خطة الطوارئ
+    "خطة الإنقاذ في العمل على المرتفعات", 
+    "خطة رفع الأحمال الحرجة", 
+    "ملصقات العمل على مرتفعات اوملصق أغراض متساقطة"
+    // تم حذف 46: إجراء وملصقات حماية السمع
 ];
 
 const InspectorApp = () => {
@@ -26,6 +72,8 @@ const InspectorApp = () => {
     consultant: '',
     receiver: '',
     work_desc: '',
+    visit_team: '', // جديد: فريق الزيارة
+    order_number: '', // جديد: رقم أمر العمل
     date: new Date().toISOString().split('T')[0]
   })
   
@@ -525,7 +573,7 @@ const InspectorApp = () => {
           </div>
         </div>
 
-        {/* Basic Info Form */}
+        {/* Basic Info Form - بيانات التقرير */}
         <div className="premium-card">
           <div className="section-title">
             <i className="fa-solid fa-file-contract"></i>
@@ -533,9 +581,15 @@ const InspectorApp = () => {
           </div>
           
           <div className="input-wrapper">
-            <label className="input-label">اسم المقاول</label>
-            <input className="premium-input" placeholder="اكتب اسم الشركة المنفذة..." value={formData.contractor} onChange={(e) => setFormData({...formData, contractor: e.target.value})} />
-            <i className="fa-solid fa-hard-hat input-icon"></i>
+            <label className="input-label">موقع العمل (الحي / الشارع)</label>
+            <input className="premium-input" placeholder="الحي / الشارع / رقم المحطة..." value={formData.location} onChange={(e) => setFormData({...formData, location: e.target.value})} />
+            <i className="fa-solid fa-map-pin input-icon"></i>
+          </div>
+
+          <div className="input-wrapper">
+             <label className="input-label">فريق الزيارة (جديد)</label>
+             <input className="premium-input" placeholder="اسماء فريق الزيارة..." value={formData.visit_team} onChange={(e) => setFormData({...formData, visit_team: e.target.value})} />
+             <i className="fa-solid fa-users input-icon"></i>
           </div>
 
           <div className="input-wrapper">
@@ -545,21 +599,27 @@ const InspectorApp = () => {
           </div>
 
           <div className="input-wrapper">
-            <label className="input-label">وصف مكان العمل</label>
-            <input className="premium-input" placeholder="الحي / الشارع / رقم المحطة..." value={formData.location} onChange={(e) => setFormData({...formData, location: e.target.value})} />
-            <i className="fa-solid fa-map-pin input-icon"></i>
+            <label className="input-label">اسم المقاول</label>
+            <input className="premium-input" placeholder="اكتب اسم الشركة المنفذة..." value={formData.contractor} onChange={(e) => setFormData({...formData, contractor: e.target.value})} />
+            <i className="fa-solid fa-hard-hat input-icon"></i>
           </div>
 
           <div className="input-wrapper">
-            <label className="input-label">المستلم</label>
-            <input className="premium-input" placeholder="اسم مستلم العمل..." value={formData.receiver} onChange={(e) => setFormData({...formData, receiver: e.target.value})} />
-            <i className="fa-solid fa-user-check input-icon"></i>
+            <label className="input-label">رقم المقايسة / أمر العمل / المهمة</label>
+            <input className="premium-input" placeholder="رقم أمر العمل..." value={formData.order_number} onChange={(e) => setFormData({...formData, order_number: e.target.value})} />
+            <i className="fa-solid fa-file-invoice input-icon"></i>
           </div>
           
           <div className="input-wrapper">
             <label className="input-label">وصف العمل</label>
             <input className="premium-input" placeholder="صيانة / تركيب / حفر..." value={formData.work_desc} onChange={(e) => setFormData({...formData, work_desc: e.target.value})} />
             <i className="fa-solid fa-briefcase input-icon"></i>
+          </div>
+
+          <div className="input-wrapper">
+            <label className="input-label">المستلم</label>
+            <input className="premium-input" placeholder="اسم مستلم العمل..." value={formData.receiver} onChange={(e) => setFormData({...formData, receiver: e.target.value})} />
+            <i className="fa-solid fa-user-check input-icon"></i>
           </div>
         </div>
 
