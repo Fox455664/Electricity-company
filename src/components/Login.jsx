@@ -9,7 +9,7 @@ const Login = () => {
   const navigate = useNavigate()
 
   const handleLogin = async (e) => {
-    if (e) e.preventDefault() // لمنع إعادة تحميل الصفحة عند ضغط Enter
+    if (e) e.preventDefault() 
 
     if (!uid || !pass) {
       alert('⚠️ أدخل اسم المستخدم وكلمة السر')
@@ -213,7 +213,7 @@ const Login = () => {
           <img src="/imge.jpg" alt="SEC Logo" className="sec-logo" />
         </div>
 
-        {/* Titles Section (From Image) */}
+        {/* Titles Section */}
         <div className="titles-container">
           <h1 className="main-title">الشركة السعودية للكهرباء</h1>
           <h2 className="sub-title">نظام تفتيش السلامة الميداني</h2>
@@ -255,5 +255,13 @@ const Login = () => {
           </button>
         </form>
 
+        <div className="footer-info">
+          SEC Safety Inspection System © 2025
+        </div>
+
+      </div> {/* إغلاق login-card */}
+    </div> // إغلاق login-wrapper
+  )
+} // إغلاق الدالة Login
 
 export default Login
