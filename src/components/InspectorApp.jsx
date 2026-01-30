@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import SignatureCanvas from 'react-signature-canvas'
 import { supabase } from '../supabaseClient'
 
-// القائمة المعدلة (تم حذف البنود: 13, 14, 16, 20, 38, 41, 46)
+// القائمة المعدلة
 const qList = [
     "تصريح العمل الأساسي والثانوي متواجد بموقع العمل", 
     "اجتماع ما قبل البدء بالعمل متواجد بموقع العمل", 
@@ -17,14 +17,10 @@ const qList = [
     "وضع أقفال السلامة و البطاقات التحذيرية و إكتمال بيانات التواصل", 
     "التأكد من تركيب الأرضي المتنقل من الجهتين", 
     "التأكد من فعالية جهاز كشف الجهد التستر", 
-    // تم حذف 13: التأكد من تواجد نموذج فحص المركبة...
-    // تم حذف 14: نماذج الفحص
-    "نموذج فحص المركبة", // كان رقم 15
-    // تم حذف 16: نموذج فحص العدد والادوات
+    "نموذج فحص المركبة", 
     "شهادة المسعف", 
     "شهادة المكافح", 
     "شهادة tuv", 
-    // تم حذف 20: QR Code
     "فحص معدات الرفع و الحفر من قبل طرف ثالث (تى يو فى)", 
     "التأكد من مطابقة السلات للمواصفات ( كفرات – زيوت – كسور – حزام الأمان – تكدس مواد .. الخ)", 
     "التأكد من سلامة خطاف الونش واحبال الرفع", 
@@ -44,14 +40,11 @@ const qList = [
     "ليات الاوكسي استيلين لا يوجد بها تشققات او تالفة", 
     "سلامة المنظم والعدادات", 
     "وجود شعار المقاول على المركبات والمعدات", 
-    // تم حذف 38: تم ازالة المخلفات...
     "خطط متعلقة بتصاريح العمل", 
     "خطة المنع من السقوط",
-    // تم حذف 41: خطة الطوارئ
     "خطة الإنقاذ في العمل على المرتفعات", 
     "خطة رفع الأحمال الحرجة", 
     "ملصقات العمل على مرتفعات اوملصق أغراض متساقطة"
-    // تم حذف 46: إجراء وملصقات حماية السمع
 ];
 
 const InspectorApp = () => {
@@ -72,8 +65,8 @@ const InspectorApp = () => {
     consultant: '',
     receiver: '',
     work_desc: '',
-    visit_team: '', // جديد: فريق الزيارة
-    order_number: '', // جديد: رقم أمر العمل
+    visit_team: '',
+    order_number: '',
     date: new Date().toISOString().split('T')[0]
   })
   
@@ -166,13 +159,12 @@ const InspectorApp = () => {
       padding-bottom: 10px;
     }
 
-    /* Verification Grid */
+    /* Verify Grid */
     .verify-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 15px;
     }
-
     .verify-item {
       background: #f8fafc;
       border: 2px dashed #cbd5e1;
@@ -180,122 +172,53 @@ const InspectorApp = () => {
       padding: 20px;
       text-align: center;
       cursor: pointer;
-      transition: all 0.3s ease;
+      min-height: 140px;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      min-height: 140px;
     }
-
     .verify-item.done {
       border-style: solid;
       border-color: var(--success);
       background: #ecfdf5;
     }
-
-    .verify-icon {
-      font-size: 30px;
-      margin-bottom: 10px;
-      color: var(--text-light);
-    }
+    .verify-icon { font-size: 30px; margin-bottom: 10px; color: var(--text-light); }
     .verify-item.done .verify-icon { color: var(--success); }
 
-    /* Inputs Styling */
-    .input-wrapper {
-      margin-bottom: 15px;
-      position: relative;
-    }
-
-    .input-label {
-      display: block;
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--text-light);
-      margin-bottom: 6px;
-    }
-
+    /* Inputs */
+    .input-wrapper { margin-bottom: 15px; position: relative; }
+    .input-label { display: block; font-size: 13px; font-weight: 600; color: var(--text-light); margin-bottom: 6px; }
     .premium-input {
-      width: 100%;
-      padding: 14px 16px;
-      padding-right: 40px; /* Space for icon */
-      border: 1px solid #e2e8f0;
-      border-radius: 10px;
-      font-size: 15px;
-      font-family: 'Cairo', sans-serif;
-      transition: border-color 0.2s;
-      background: #f8fafc;
+      width: 100%; padding: 14px 16px; padding-right: 40px;
+      border: 1px solid #e2e8f0; border-radius: 10px;
+      font-size: 15px; font-family: 'Cairo', sans-serif; background: #f8fafc;
     }
+    .input-icon { position: absolute; top: 38px; left: 15px; color: #94a3b8; }
 
-    .premium-input:focus {
-      outline: none;
-      border-color: var(--primary);
-      background: white;
-      box-shadow: 0 0 0 3px rgba(0, 90, 143, 0.1);
-    }
-
-    .input-icon {
-      position: absolute;
-      top: 38px;
-      left: 15px;
-      color: #94a3b8;
-    }
-
-    /* Question Card Styling */
+    /* Questions */
     .question-card {
-      background: white;
-      border-radius: 12px;
-      padding: 20px;
-      margin: 15px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.02);
-      border-right: 4px solid transparent;
+      background: white; border-radius: 12px; padding: 20px; margin: 15px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.02); border-right: 4px solid transparent;
     }
+    .question-card.answered { border-right-color: var(--primary); }
+    .q-text { font-weight: 700; color: var(--text-main); margin-bottom: 15px; line-height: 1.5; }
 
-    .question-card.answered {
-      border-right-color: var(--primary);
+    .options-container { display: flex; background: #f1f5f9; padding: 4px; border-radius: 10px; gap: 5px; }
+    .option-btn { flex: 1; padding: 10px; text-align: center; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; color: var(--text-light); }
+    .option-btn.yes.active { background: #10b981; color: white; }
+    .option-btn.no.active { background: #ef4444; color: white; }
+    .option-btn.na.active { background: #64748b; color: white; }
+
+    /* Action Buttons Area */
+    .actions-row {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
     }
-
-    .q-text {
-      font-weight: 700;
-      color: var(--text-main);
-      margin-bottom: 15px;
-      line-height: 1.5;
-    }
-
-    /* Modern Radio Buttons (Segmented Control) */
-    .options-container {
-      display: flex;
-      background: #f1f5f9;
-      padding: 4px;
-      border-radius: 10px;
-      gap: 5px;
-    }
-
-    .option-btn {
+    .action-btn {
       flex: 1;
-      padding: 10px;
-      text-align: center;
-      border-radius: 8px;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      color: var(--text-light);
-    }
-
-    .option-btn:hover { background: rgba(255,255,255,0.5); }
-
-    .option-btn.yes.active { background: #10b981; color: white; box-shadow: 0 2px 5px rgba(16, 185, 129, 0.3); }
-    .option-btn.no.active { background: #ef4444; color: white; box-shadow: 0 2px 5px rgba(239, 68, 68, 0.3); }
-    .option-btn.na.active { background: #64748b; color: white; box-shadow: 0 2px 5px rgba(100, 116, 139, 0.3); }
-
-    /* Action Buttons */
-    .photo-btn {
-      margin-top: 15px;
-      background: #fff;
       border: 1px dashed #cbd5e1;
-      color: var(--primary);
-      width: 100%;
       padding: 10px;
       border-radius: 8px;
       font-size: 13px;
@@ -303,60 +226,61 @@ const InspectorApp = () => {
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
+      gap: 5px;
+      background: #f8fafc;
+      color: var(--text-main);
+    }
+    .action-btn:active { transform: scale(0.98); background: #e2e8f0; }
+
+    /* Image Grid */
+    .img-grid {
+        display: flex;
+        gap: 10px;
+        margin-top: 10px;
+        flex-wrap: wrap;
+    }
+    .img-thumb {
+        width: 60px;
+        height: 60px;
+        border-radius: 8px;
+        object-fit: cover;
+        border: 2px solid #e2e8f0;
+        position: relative;
+    }
+    .del-btn {
+        position: absolute;
+        top: -5px;
+        right: -5px;
+        background: #ef4444;
+        color: white;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        cursor: pointer;
+        border: none;
     }
 
-    .note-input {
-      width: 100%;
-      margin-top: 10px;
-      padding: 10px;
-      border: 1px solid #e2e8f0;
-      border-radius: 8px;
-      font-family: 'Cairo';
-      font-size: 13px;
-      resize: none;
-    }
+    .note-input { width: 100%; margin-top: 10px; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; font-family: 'Cairo'; font-size: 13px; resize: none; }
 
-    /* Submit Footer */
+    /* Footer */
     .floating-footer {
-      position: fixed;
-      bottom: 20px;
-      left: 20px;
-      right: 20px;
-      background: rgba(255, 255, 255, 0.9);
-      backdrop-filter: blur(10px);
-      padding: 15px;
-      border-radius: 16px;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-      z-index: 100;
-      display: flex;
-      justify-content: center;
+      position: fixed; bottom: 20px; left: 20px; right: 20px;
+      background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px);
+      padding: 15px; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+      z-index: 100; display: flex; justify-content: center;
     }
-
     .submit-main-btn {
       background: linear-gradient(135deg, var(--accent) 0%, #e67e00 100%);
-      color: white;
-      border: none;
-      padding: 16px 40px;
-      border-radius: 50px;
-      font-weight: 700;
-      font-size: 16px;
-      box-shadow: 0 4px 15px rgba(242, 139, 0, 0.4);
-      cursor: pointer;
-      width: 100%;
+      color: white; border: none; padding: 16px 40px; border-radius: 50px;
+      font-weight: 700; font-size: 16px; width: 100%;
+      box-shadow: 0 4px 15px rgba(242, 139, 0, 0.4); cursor: pointer;
       font-family: 'Cairo', sans-serif;
-      transition: transform 0.2s;
     }
-    
-    .submit-main-btn:active { transform: scale(0.98); }
-    .submit-main-btn:disabled { background: #cbd5e1; box-shadow: none; cursor: not-allowed; }
-
-    /* Signature */
-    .sig-wrapper {
-      border: 2px solid #e2e8f0;
-      border-radius: 12px;
-      overflow: hidden;
-    }
+    .submit-main-btn:disabled { background: #cbd5e1; cursor: not-allowed; }
   `;
 
   // --- Auth Check ---
@@ -413,6 +337,7 @@ const InspectorApp = () => {
     setIsCamOpen(false)
   }
 
+  // --- Image Compression ---
   const compressImage = (file) => {
     return new Promise((resolve) => {
       const reader = new FileReader()
@@ -422,13 +347,13 @@ const InspectorApp = () => {
         img.src = e.target.result
         img.onload = () => {
           const elem = document.createElement('canvas')
-          const MAX_WIDTH = 600
+          const MAX_WIDTH = 500
           const scaleFactor = MAX_WIDTH / img.width
           elem.width = MAX_WIDTH
           elem.height = img.height * scaleFactor
           const ctx = elem.getContext('2d')
           ctx.drawImage(img, 0, 0, elem.width, elem.height)
-          resolve(elem.toDataURL('image/jpeg', 0.4))
+          resolve(elem.toDataURL('image/jpeg', 0.3))
         }
       }
     })
@@ -441,13 +366,42 @@ const InspectorApp = () => {
     }))
   }
 
+  // Handle adding multiple photos
+  const handleAddPhoto = (qIndex, newFiles) => {
+      if (!newFiles || newFiles.length === 0) return;
+      
+      const fileArray = Array.from(newFiles);
+      
+      setAnswers(prev => {
+          const existingFiles = prev[qIndex]?.files || [];
+          return {
+              ...prev,
+              [qIndex]: { 
+                  ...prev[qIndex], 
+                  files: [...existingFiles, ...fileArray] 
+              }
+          }
+      });
+  }
+
+  const removePhoto = (qIndex, fileIdx) => {
+      setAnswers(prev => {
+          const files = [...(prev[qIndex]?.files || [])];
+          files.splice(fileIdx, 1);
+          return {
+              ...prev,
+              [qIndex]: { ...prev[qIndex], files }
+          }
+      });
+  }
+
   const handleSubmit = async () => {
     if (!geo) { alert('⚠️ يرجى تحديد الموقع أولاً'); topRef.current?.scrollIntoView({ behavior: 'smooth' }); return; }
     if (!photo) { alert('⚠️ يرجى التقاط صورة سيلفي للتحقق'); topRef.current?.scrollIntoView({ behavior: 'smooth' }); return; }
     if (!formData.contractor) { alert('⚠️ يرجى كتابة اسم المقاول'); return; }
 
     setLoading(true)
-    setBtnText('جاري المعالجة...')
+    setBtnText('جاري ضغط الصور والمعالجة...')
 
     try {
       const serial = Date.now()
@@ -465,30 +419,44 @@ const InspectorApp = () => {
 
       for (let i = 0; i < qList.length; i++) {
         const qKey = i + 1
-        setBtnText(`رفع الصور (${i + 1}/${qList.length})`)
-
         const currentAns = answers[qKey] || {}
         const val = currentAns.val || 'N/A'
         const note = currentAns.note || ''
         
         payload.answers[qKey] = val === 'N/A' ? 'لا ينطبق' : val
 
-        let imgBase64 = ''
-        if (currentAns.file) {
-          try { imgBase64 = await compressImage(currentAns.file) } catch (e) { console.error(e) }
+        // Process Multiple Photos
+        let processedPhotos = []
+        if (currentAns.files && currentAns.files.length > 0) {
+            setBtnText(`جاري رفع ${currentAns.files.length} صور للبند ${qKey}...`)
+            for (const file of currentAns.files) {
+                try {
+                    const compressed = await compressImage(file);
+                    processedPhotos.push(compressed);
+                } catch (e) {
+                    console.error("Image compression error", e);
+                }
+            }
         }
 
-        if (val === 'لا' || note || imgBase64) {
+        if (val === 'لا' || note || processedPhotos.length > 0) {
           payload.violations.push({
             q: qList[i],
             ans: val === 'N/A' ? 'لا ينطبق' : val,
             note,
-            photo: imgBase64
+            photos: processedPhotos
           })
         }
       }
 
-      setBtnText('جاري الإرسال...')
+      setBtnText('جاري إرسال البيانات للسيرفر...')
+      
+      const jsonString = JSON.stringify(payload);
+      const sizeInMB = jsonString.length / 1024 / 1024;
+      if (sizeInMB > 5.5) {
+          throw new Error("حجم الصور كبير جداً، يرجى تقليل عدد الصور أو جودتها");
+      }
+
       const { error } = await supabase.from('reports').insert([payload])
       if (error) throw error
 
@@ -496,7 +464,8 @@ const InspectorApp = () => {
       window.location.reload()
 
     } catch (err) {
-      alert('خطأ: ' + err.message)
+      console.error(err)
+      alert('خطأ في الإرسال: ' + err.message)
       setBtnText('إعادة المحاولة')
     } finally {
       setLoading(false)
@@ -509,7 +478,7 @@ const InspectorApp = () => {
     <div className="app-container">
       <style>{styles}</style>
       
-      {/* Premium Header */}
+      {/* Header */}
       <div className="premium-header" ref={topRef}>
         <div style={{display:'flex', alignItems:'center', gap:'15px'}}>
            <div className="inspector-badge">
@@ -532,7 +501,7 @@ const InspectorApp = () => {
           <i className="fa-regular fa-calendar"></i> {new Date().toLocaleDateString('ar-SA')}
         </p>
 
-        {/* Verification Section */}
+        {/* Verification */}
         <div className="premium-card">
           <div className="section-title">
             <i className="fa-solid fa-fingerprint"></i>
@@ -540,16 +509,11 @@ const InspectorApp = () => {
           </div>
           
           <div className="verify-grid">
-            {/* GPS Card */}
             <div className={`verify-item ${geo ? 'done' : ''}`} onClick={getGeo}>
               <i className={`fa-solid ${geo ? 'fa-map-location-dot' : 'fa-location-crosshairs'} verify-icon`}></i>
               <div style={{fontWeight:'bold', fontSize:'14px'}}>{geo ? 'تم تحديد الموقع' : 'تحديد الموقع'}</div>
-              <div style={{fontSize:'11px', color:'#94a3b8', marginTop:'5px'}}>
-                {geo ? 'إحداثيات دقيقة ✅' : 'اضغط لتفعيل GPS'}
-              </div>
             </div>
 
-            {/* Camera Card */}
             <div className={`verify-item ${photo ? 'done' : ''}`} onClick={photo ? null : startCam}>
               {isCamOpen ? (
                 <>
@@ -566,14 +530,14 @@ const InspectorApp = () => {
                   <div style={{fontWeight:'bold', fontSize:'14px', marginTop:'10px'}}>
                     {photo ? 'تم التقاط الصورة' : 'صورة سيلفي'}
                   </div>
-                  {photo && <button onClick={() => setPhoto(null)} style={{fontSize:'10px', color:'#ef4444', background:'none', border:'none', marginTop:'5px'}}>إعادة الالتقاط</button>}
+                  {photo && <button onClick={() => setPhoto(null)} style={{fontSize:'10px', color:'#ef4444', background:'none', border:'none', marginTop:'5px'}}>إعادة</button>}
                 </>
               )}
             </div>
           </div>
         </div>
 
-        {/* Basic Info Form - بيانات التقرير */}
+        {/* Info Form */}
         <div className="premium-card">
           <div className="section-title">
             <i className="fa-solid fa-file-contract"></i>
@@ -587,7 +551,7 @@ const InspectorApp = () => {
           </div>
 
           <div className="input-wrapper">
-             <label className="input-label">فريق الزيارة (جديد)</label>
+             <label className="input-label">فريق الزيارة</label>
              <input className="premium-input" placeholder="اسماء فريق الزيارة..." value={formData.visit_team} onChange={(e) => setFormData({...formData, visit_team: e.target.value})} />
              <i className="fa-solid fa-users input-icon"></i>
           </div>
@@ -629,6 +593,7 @@ const InspectorApp = () => {
           const qIdx = i + 1
           const currentVal = answers[qIdx]?.val || 'N/A'
           const isAnswered = answers[qIdx]?.val && answers[qIdx]?.val !== 'N/A'
+          const currentFiles = answers[qIdx]?.files || []
 
           return (
             <div key={i} className={`question-card ${isAnswered ? 'answered' : ''}`}>
@@ -655,17 +620,35 @@ const InspectorApp = () => {
                 </div>
               </div>
 
-              <button className="photo-btn" onClick={() => document.getElementById(`file-${qIdx}`).click()}>
-                <i className="fa-solid fa-camera"></i> 
-                {answers[qIdx]?.file ? 'تم إرفاق صورة ✅' : 'إرفاق صورة مخالفة'}
-              </button>
+              {/* Photo Actions - Only Camera Button */}
+              <div className="actions-row">
+                  <div className="action-btn" onClick={() => document.getElementById(`cam-${qIdx}`).click()}>
+                    <i className="fa-solid fa-camera" style={{color:'var(--primary)'}}></i>
+                    التقاط صورة (كاميرا)
+                  </div>
+              </div>
+
+              {/* Hidden Inputs */}
               <input 
                 type="file" 
-                id={`file-${qIdx}`} 
+                id={`cam-${qIdx}`} 
                 style={{display:'none'}} 
                 accept="image/*"
-                onChange={(e) => handleAnswerChange(qIdx, 'file', e.target.files[0])}
+                capture="environment" // Forces Rear Camera
+                onChange={(e) => handleAddPhoto(qIdx, e.target.files)}
               />
+
+              {/* Images Grid */}
+              {currentFiles.length > 0 && (
+                  <div className="img-grid">
+                      {currentFiles.map((file, idx) => (
+                          <div key={idx} style={{position:'relative'}}>
+                              <img src={URL.createObjectURL(file)} className="img-thumb" alt="preview" />
+                              <button className="del-btn" onClick={() => removePhoto(qIdx, idx)}>×</button>
+                          </div>
+                      ))}
+                  </div>
+              )}
               
               <textarea
                 className="note-input"
