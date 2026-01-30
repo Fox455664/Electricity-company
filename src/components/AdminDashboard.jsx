@@ -1,10 +1,10 @@
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import SignatureCanvas from 'react-signature-canvas'
+import html2pdf from 'html2pdf.js'
 import { supabase } from '../supabaseClient'
 
-// القائمة الموحدة
-const qList = [
+// قائمة الأسئلة الموحدة
+const fullQuestionsList = [
     "تصريح العمل الأساسي والثانوي متواجد بموقع العمل", 
     "اجتماع ما قبل البدء بالعمل متواجد بموقع العمل", 
     "نموذج فريق العمل متواجد بموقع العمل (مذكور رقم المقايسة - وصف العمل - رقم التصريح - توقيع مسئول شركة الكهرباء)", 
@@ -40,6 +40,7 @@ const qList = [
     "ليات الاوكسي استيلين لا يوجد بها تشققات او تالفة", 
     "سلامة المنظم والعدادات", 
     "وجود شعار المقاول على المركبات والمعدات", 
+    "خطط متعلقة بتصاريح العمل", 
     "خطة المنع من السقوط",
     "خطة الإنقاذ في العمل على المرتفعات", 
     "خطة رفع الأحمال الحرجة", 
@@ -47,349 +48,556 @@ const qList = [
     "صور البطاقات"
 ];
 
-const InspectorApp = () => {
+const AdminDashboard = () => {
   const navigate = useNavigate()
-  const sigPad = useRef(null)
-  const topRef = useRef(null)
-  const sigContainerRef = useRef(null) // مرجع لمكان التوقيع عشان السكرول
-
-  // States
+  
+  // State Variables
   const [user, setUser] = useState(null)
-  const [loading, setLoading] = useState(false)
-  const [btnText, setBtnText] = useState('إعتماد وإرسال التقرير')
-  
-  // Form Data
-  const [formData, setFormData] = useState({
-    contractor: '',
-    location: '',
-    consultant: '',
-    receiver: '',
-    work_desc: '',
-    visit_team: '',
-    order_number: '',
-    date: new Date().toISOString().split('T')[0]
-  })
-  
-  // Verification (GPS)
-  const [geo, setGeo] = useState(null)
+  const [activeTab, setActiveTab] = useState('reports')
+  const [reports, setReports] = useState([])
+  const [inspectorsList, setInspectorsList] = useState([])
+  const [searchTerm, setSearchTerm] = useState('')
+  const [expandedReport, setExpandedReport] = useState(null)
+  const [modalImage, setModalImage] = useState(null)
+  const [loading, setLoading] = useState(true)
 
-  // Answers Store
-  const [answers, setAnswers] = useState({})
+  // New Inspector Form
+  const [newInspectorName, setNewInspectorName] = useState('')
+  const [newInspectorPass, setNewInspectorPass] = useState('')
+  const [showPassword, setShowPassword] = useState({})
 
-  // --- Styles ---
+  // --- Styles Injection ---
   const styles = `
-    :root {
-      --primary: #005a8f;
-      --accent: #f28b00;
-      --bg-color: #f8fafc;
+    :root { 
+      --main-blue: #005a8f; 
+      --dark-blue: #0f172a;
+      --main-orange: #f28b00; 
+      --bg-color: #f1f5f9; 
       --card-bg: #ffffff;
-      --text-main: #1e293b;
+      --text-main: #334155; 
       --text-light: #64748b;
+      --danger: #ef4444; 
       --success: #10b981;
-      --danger: #ef4444;
-      --border-radius: 16px;
     }
-    body { background-color: var(--bg-color); font-family: 'Cairo', sans-serif; margin: 0; padding: 0; }
-    .app-container { width: 100%; max-width: 900px; margin: 0 auto; padding-bottom: 120px; }
-    .premium-header { background: linear-gradient(135deg, #005a8f 0%, #004269 100%); color: white; padding: 20px; border-radius: 0 0 25px 25px; box-shadow: 0 10px 30px rgba(0, 90, 143, 0.15); position: sticky; top: 0; z-index: 1000; display: flex; justify-content: space-between; align-items: center; }
-    .inspector-badge { background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(5px); padding: 8px 16px; border-radius: 50px; font-size: 13px; display: flex; align-items: center; gap: 8px; }
-    .main-title { text-align: center; margin: 0 0 5px 0; color: #0f172a; font-size: 20px; font-weight: 800; }
-    .premium-card { background: var(--card-bg); border-radius: var(--border-radius); padding: 20px; margin: 15px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03); border: 1px solid #e2e8f0; }
-    .section-title { font-size: 18px; font-weight: 700; color: var(--primary); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; }
-    .verify-item { background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 12px; padding: 20px; text-align: center; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; }
-    .verify-item.done { border-style: solid; border-color: var(--success); background: #ecfdf5; }
-    .verify-icon { font-size: 30px; margin-bottom: 10px; color: var(--text-light); }
-    .verify-item.done .verify-icon { color: var(--success); }
-    .input-wrapper { margin-bottom: 15px; position: relative; }
-    .input-label { display: block; font-size: 13px; font-weight: 600; color: var(--text-light); margin-bottom: 6px; }
-    .premium-input { width: 100%; padding: 14px 16px; padding-right: 40px; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 15px; font-family: 'Cairo', sans-serif; background: #f8fafc; box-sizing: border-box; }
-    .input-icon { position: absolute; top: 38px; left: 15px; color: #94a3b8; }
-    .question-card { background: white; border-radius: 12px; padding: 20px; margin: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.02); border-right: 4px solid transparent; }
-    .question-card.answered { border-right-color: var(--primary); }
-    .q-text { font-weight: 700; color: var(--text-main); margin-bottom: 15px; line-height: 1.5; }
-    .options-container { display: flex; background: #f1f5f9; padding: 4px; border-radius: 10px; gap: 5px; }
-    .option-btn { flex: 1; padding: 10px; text-align: center; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; color: var(--text-light); }
-    .option-btn.yes.active { background: #10b981; color: white; }
-    .option-btn.no.active { background: #ef4444; color: white; }
-    .option-btn.na.active { background: #64748b; color: white; }
-    .actions-row { display: flex; gap: 10px; margin-top: 15px; }
-    .action-btn { flex: 1; border: 1px dashed #cbd5e1; padding: 10px; border-radius: 8px; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; background: #f8fafc; color: var(--text-main); }
-    .img-grid { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
-    .img-thumb { width: 60px; height: 60px; border-radius: 8px; object-fit: cover; border: 2px solid #e2e8f0; position: relative; }
-    .del-btn { position: absolute; top: -5px; right: -5px; background: #ef4444; color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 12px; cursor: pointer; border: none; }
-    .note-input { width: 100%; margin-top: 10px; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; font-family: 'Cairo'; font-size: 13px; resize: none; box-sizing: border-box; }
-    .floating-footer { position: fixed; bottom: 20px; left: 20px; right: 20px; background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); padding: 15px; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); z-index: 100; display: flex; justify-content: center; }
-    .submit-main-btn { background: linear-gradient(135deg, var(--accent) 0%, #e67e00 100%); color: white; border: none; padding: 16px 40px; border-radius: 50px; font-weight: 700; font-size: 16px; width: 100%; box-shadow: 0 4px 15px rgba(242, 139, 0, 0.4); cursor: pointer; font-family: 'Cairo', sans-serif; }
-    .submit-main-btn:disabled { background: #cbd5e1; cursor: not-allowed; }
-    .sig-canvas { width: 100% !important; height: 200px !important; border-radius: 8px; }
+    body { background-color: var(--bg-color); font-family: 'Cairo', sans-serif; color: var(--text-main); }
+    .dashboard-header { background: linear-gradient(to right, #005a8f, #004269); padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 20px rgba(0, 90, 143, 0.2); position: sticky; top: 0; z-index: 100; color: white; }
+    .title-container { font-weight: 800; font-size: 18px; }
+    .header-actions { display: flex; gap: 10px; }
+    .action-btn { border: none; padding: 8px 16px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 13px; display: flex; align-items: center; gap: 8px; transition: all 0.2s; font-family: 'Cairo'; }
+    .btn-inspector { background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); }
+    .btn-logout { background: #fee2e2; color: #b91c1c; }
+    .dashboard-container { max-width: 1000px; margin: 20px auto; padding: 0 15px; }
+    .tabs-wrapper { background: white; padding: 8px; border-radius: 16px; display: flex; gap: 10px; margin-bottom: 25px; box-shadow: 0 2px 10px rgba(0,0,0,0.03); }
+    .tab-item { flex: 1; padding: 12px; border: none; border-radius: 12px; background: transparent; color: var(--text-light); font-weight: 700; font-size: 15px; cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 10px; font-family: 'Cairo'; }
+    .tab-item.active { background: var(--main-blue); color: white; box-shadow: 0 4px 12px rgba(0, 90, 143, 0.3); }
+    .search-wrapper { position: relative; margin-bottom: 25px; }
+    .search-input { width: 100%; padding: 16px 50px 16px 20px; border: 1px solid #e2e8f0; border-radius: 16px; font-size: 15px; background: white; box-shadow: 0 4px 15px rgba(0,0,0,0.03); font-family: 'Cairo'; transition: 0.3s; box-sizing: border-box; }
+    .search-icon { position: absolute; right: 20px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 18px; }
+    .report-card { background: white; border-radius: 16px; padding: 24px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); border: 1px solid #f1f5f9; position: relative; overflow: hidden; transition: transform 0.2s; border-right: 5px solid; }
+    .report-card:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
+    .report-card.safe { border-right-color: var(--success); }
+    .report-card.violation { border-right-color: var(--danger); }
+    .card-header { display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #f1f5f9; }
+    .serial-number { font-size: 18px; font-weight: 800; color: var(--main-blue); display: flex; align-items: center; gap: 10px; }
+    .status-badge { padding: 5px 12px; border-radius: 50px; font-size: 12px; font-weight: 700; }
+    .status-safe { background: #dcfce7; color: #166534; }
+    .status-danger { background: #fee2e2; color: #991b1b; }
+    .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
+    .info-item { display: flex; flex-direction: column; }
+    .info-label { font-size: 12px; color: var(--text-light); margin-bottom: 4px; font-weight: 600; }
+    .info-value { font-size: 14px; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 6px; }
+    .violations-container { background: #fff1f2; border: 1px solid #fecaca; border-radius: 12px; padding: 15px; margin: 15px 0; }
+    .v-item { background: white; padding: 12px; border-radius: 8px; border: 1px solid #fcd34d; margin-bottom: 8px; font-size: 13px; }
+    .action-grid { display: flex; gap: 10px; margin-top: 20px; }
+    .btn-action-card { flex: 1; padding: 12px; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-family: 'Cairo'; font-size: 14px; }
+    .btn-view { background: #eff6ff; color: var(--main-blue); }
+    .btn-pdf { background: var(--main-blue); color: white; }
+    .btn-delete { background: white; border: 1px solid #fee2e2; color: #dc2626; }
+    .inspector-card { background: white; padding: 15px 20px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.03); border: 1px solid #f1f5f9; }
+    .add-inspector-box { background: white; padding: 25px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 25px; }
+    .input-row { display: flex; gap: 15px; margin-bottom: 15px; }
+    .form-input { flex: 1; padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px; font-family: 'Cairo'; background: #f8fafc; }
+    .btn-add { width: 100%; padding: 12px; background: var(--success); color: white; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; font-family: 'Cairo'; }
+    #imgModal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; display: flex; justify-content: center; align-items: center; }
+    #imgModal img { max-width: 95%; max-height: 80vh; border-radius: 8px; }
+    .close-modal { position: absolute; top: 20px; right: 20px; color: white; font-size: 30px; cursor: pointer; }
+    .details-panel { background: #f8fafc; padding: 20px; border-radius: 12px; margin-top: 15px; border: 1px solid #e2e8f0; }
+    .q-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #e2e8f0; font-size: 13px; }
+    @media (max-width: 768px) {
+      .header-actions span { display: none; }
+      .info-grid { grid-template-columns: 1fr; }
+      .input-row { flex-direction: column; }
+    }
   `;
 
-  // --- Auth Check ---
+  // --- Auth & Initial Load ---
   useEffect(() => {
     const userData = sessionStorage.getItem('user')
     if (!userData) {
       navigate('/')
     } else {
-      setUser(JSON.parse(userData))
+      const parsedUser = JSON.parse(userData)
+      if (parsedUser.role !== 'admin') {
+        navigate('/inspector')
+      } else {
+        setUser(parsedUser)
+        fetchReports()
+        fetchInspectors()
+      }
     }
   }, [])
 
-  // --- Helpers ---
-  const getGeo = () => {
-    if (!navigator.geolocation) {
-      alert('المتصفح لا يدعم تحديد الموقع')
-      return
-    }
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const link = `https://maps.google.com/?q=${pos.coords.latitude},${pos.coords.longitude}`
-        setGeo(link)
-      },
-      () => alert('فشل تحديد الموقع. تأكد من تفعيل GPS')
-    )
-  }
-
-  // --- Image Compression ---
-  const compressImage = (file) => {
-    return new Promise((resolve) => {
-      const reader = new FileReader()
-      reader.readAsDataURL(file)
-      reader.onload = (e) => {
-        const img = new Image()
-        img.src = e.target.result
-        img.onload = () => {
-          const elem = document.createElement('canvas')
-          const MAX_WIDTH = 500
-          const scaleFactor = MAX_WIDTH / img.width
-          elem.width = MAX_WIDTH
-          elem.height = img.height * scaleFactor
-          const ctx = elem.getContext('2d')
-          ctx.drawImage(img, 0, 0, elem.width, elem.height)
-          resolve(elem.toDataURL('image/jpeg', 0.5))
-        }
-      }
-    })
-  }
-
-  const handleAnswerChange = (qIndex, field, value) => {
-    setAnswers(prev => ({
-      ...prev,
-      [qIndex]: { ...prev[qIndex], [field]: value }
-    }))
-  }
-
-  const handleAddPhoto = (qIndex, newFiles) => {
-      if (!newFiles || newFiles.length === 0) return;
-      const fileArray = Array.from(newFiles);
-      setAnswers(prev => {
-          const existingFiles = prev[qIndex]?.files || [];
-          return {
-              ...prev,
-              [qIndex]: { ...prev[qIndex], files: [...existingFiles, ...fileArray] }
-          }
-      });
-  }
-
-  const removePhoto = (qIndex, fileIdx) => {
-      setAnswers(prev => {
-          const files = [...(prev[qIndex]?.files || [])];
-          files.splice(fileIdx, 1);
-          return {
-              ...prev,
-              [qIndex]: { ...prev[qIndex], files }
-          }
-      });
-  }
-
-  const handleSubmit = async () => {
-    if (!geo) { alert('⚠️ يرجى تحديد الموقع أولاً'); topRef.current?.scrollIntoView({ behavior: 'smooth' }); return; }
-    if (!formData.contractor) { alert('⚠️ يرجى كتابة اسم المقاول'); topRef.current?.scrollIntoView({ behavior: 'smooth' }); return; }
-    
-    // --- التحقق من توقيع المستلم (إجباري) ---
-    if (sigPad.current.isEmpty()) {
-        alert('⚠️ يجب توقيع المستلم قبل إرسال التقرير');
-        // تمرير الشاشة تلقائياً لمنطقة التوقيع
-        sigContainerRef.current?.scrollIntoView({ behavior: 'smooth' });
-        return;
-    }
-
+  // --- Data Fetching ---
+  const fetchReports = async () => {
     setLoading(true)
-    setBtnText('جاري ضغط الصور والمعالجة...')
-
     try {
-      const serial = Date.now()
-      const payload = {
-        serial,
-        inspector: user.username,
-        timestamp: new Date().toLocaleString('ar-SA'),
-        ...formData,
-        google_maps_link: geo,
-        signature_image: sigPad.current.toDataURL('image/png', 0.5), // التوقيع مضمون موجود الآن
-        answers: {},
-        violations: []
-      }
-
-      for (let i = 0; i < qList.length; i++) {
-        const qKey = i + 1
-        const currentAns = answers[qKey] || {}
-        const val = currentAns.val || 'N/A'
-        const note = currentAns.note || ''
-        
-        payload.answers[qKey] = val === 'N/A' ? 'لا ينطبق' : val
-
-        // ضغط الصور
-        let processedPhotos = []
-        if (currentAns.files && currentAns.files.length > 0) {
-            setBtnText(`جاري رفع ${currentAns.files.length} صور للبند ${qKey}...`)
-            for (const file of currentAns.files) {
-                try {
-                    const compressed = await compressImage(file);
-                    processedPhotos.push(compressed);
-                } catch (e) { console.error("Compression error", e); }
-            }
-        }
-
-        if (val === 'لا' || note || processedPhotos.length > 0) {
-          payload.violations.push({
-            q: qList[i],
-            ans: val === 'N/A' ? 'لا ينطبق' : val,
-            note,
-            photos: processedPhotos
-          })
-        }
-      }
-
-      setBtnText('جاري إرسال البيانات للسيرفر...')
-      
-      const jsonString = JSON.stringify(payload);
-      if ((jsonString.length / 1024 / 1024) > 5.5) {
-          throw new Error("حجم الصور كبير جداً، يرجى تقليل عدد الصور أو جودتها");
-      }
-
-      const { error } = await supabase.from('reports').insert([payload])
+      const { data, error } = await supabase
+        .from('reports')
+        .select('*')
+        .order('created_at', { ascending: false })
       if (error) throw error
-
-      alert('✅ تم إرسال التقرير بنجاح!')
-      window.location.reload()
-
+      setReports(data || [])
     } catch (err) {
-      console.error(err)
-      alert('خطأ في الإرسال: ' + err.message)
-      setBtnText('إعادة المحاولة')
+      alert('خطأ: ' + err.message)
     } finally {
       setLoading(false)
     }
   }
 
-  if (!user) return <div style={{display:'flex', justifyContent:'center', alignItems:'center', height:'100vh', fontFamily:'Cairo'}}>جاري تحميل النظام...</div>
+  const fetchInspectors = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .neq('role', 'admin')
+      if (error) throw error
+      setInspectorsList(data || [])
+    } catch (err) {
+      console.error(err)
+    }
+  }
 
+  // --- Actions ---
+  const addInspector = async () => {
+    if (!newInspectorName || !newInspectorPass) return alert('أكمل البيانات')
+    try {
+      const { error } = await supabase
+        .from('users')
+        .insert([{ username: newInspectorName, password: newInspectorPass, role: 'inspector' }])
+      
+      if (error) throw error
+      
+      alert('تمت الإضافة بنجاح')
+      setNewInspectorName('')
+      setNewInspectorPass('')
+      fetchInspectors()
+    } catch (err) {
+      alert('خطأ في الإضافة: ' + err.message)
+    }
+  }
+
+  const deleteInspector = async (username) => {
+    if (!window.confirm('هل أنت متأكد من حذف هذا المفتش؟')) return
+    try {
+      const { error } = await supabase.from('users').delete().eq('username', username)
+      if (error) throw error
+      fetchInspectors()
+    } catch (err) {
+      alert('خطأ: ' + err.message)
+    }
+  }
+
+  const deleteReport = async (id) => {
+    if (!window.confirm('هل أنت متأكد من حذف التقرير؟')) return
+    try {
+      const { error } = await supabase.from('reports').delete().eq('id', id)
+      if (error) throw error
+      setReports(reports.filter(r => r.id !== id))
+    } catch (err) {
+      alert('خطأ: ' + err.message)
+    }
+  }
+
+  const togglePassVisibility = (username) => {
+    setShowPassword(prev => ({ ...prev, [username]: !prev[username] }))
+  }
+
+  // --- PDF Generation Logic (المعدل والمحسن) ---
+  const generatePDF = (r) => {
+    const container = document.createElement('div')
+    
+    // إعدادات CSS للطباعة (منع التقطيع وتنسيق الكروت)
+    const pdfStyles = `
+      <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap');
+        body { font-family: 'Cairo', sans-serif; direction: rtl; color: #333; -webkit-print-color-adjust: exact; }
+        
+        .header-section { text-align: center; border-bottom: 3px solid #f28b00; padding-bottom: 15px; margin-bottom: 20px; }
+        .header-title { color: #005a8f; font-size: 24px; font-weight: 800; margin: 0; }
+        .header-sub { color: #666; font-size: 14px; margin: 5px 0; }
+
+        .info-grid { 
+            display: grid; grid-template-columns: 1fr 1fr; gap: 8px; 
+            font-size: 12px; background: #f8fafc; padding: 15px; 
+            border-radius: 8px; margin-bottom: 20px; border: 1px solid #e2e8f0; 
+        }
+
+        /* كارت الملاحظة */
+        .observation-card {
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            page-break-inside: avoid; /* منع القص */
+            break-inside: avoid;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        /* ألوان الكارت */
+        .card-danger { border-right: 5px solid #dc2626; background-color: #fef2f2; }
+        .card-success { border-right: 5px solid #16a34a; background-color: #f0fdf4; }
+        .card-neutral { border-right: 5px solid #64748b; background-color: #f8fafc; }
+
+        .q-title { font-weight: 800; font-size: 14px; margin-bottom: 8px; color: #1e293b; }
+        .q-status { font-size: 12px; font-weight: bold; margin-bottom: 5px; }
+        .q-note { font-size: 12px; color: #555; background: rgba(255,255,255,0.7); padding: 5px; border-radius: 4px; border: 1px dashed #ccc; margin-bottom: 10px; }
+
+        /* حاوية الصور الكبيرة */
+        .photos-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+            justify-content: flex-start;
+        }
+        .large-evidence-img {
+            width: 48%; /* عرض كبير للصورة */
+            height: 220px; 
+            object-fit: cover; 
+            border-radius: 6px;
+            border: 1px solid #cbd5e1;
+            background-color: #fff;
+        }
+
+        table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 20px; }
+        th { background: #005a8f; color: white; padding: 8px; text-align: right; }
+        td { border-bottom: 1px solid #eee; padding: 6px; }
+        tr { page-break-inside: avoid; }
+
+        .footer { margin-top: 30px; display: flex; justify-content: space-between; page-break-inside: avoid; }
+      </style>
+    `
+
+    let detailedItemsHTML = ''
+    let simpleItemsRows = ''
+
+    fullQuestionsList.forEach((q, i) => {
+        // البحث عن البند في قائمة الانتهاكات
+        const violationData = r.violations?.find(v => v.q === q);
+        // البحث عن الإجابة في القائمة العادية
+        const normalAns = r.answers && r.answers[i+1];
+        let finalAns = "لا ينطبق";
+
+        if (violationData) finalAns = violationData.ans;
+        else if (normalAns) finalAns = normalAns.val || normalAns;
+        
+        if (finalAns === 'N/A') finalAns = 'لا ينطبق';
+
+        // الشروط لعرض البند في كارت تفصيلي:
+        // 1. إذا كانت الإجابة "لا" (مخالفة) -> أحمر
+        // 2. إذا كانت "نعم" + يوجد صور (توثيق) -> أخضر
+        // 3. إذا كان هناك ملاحظة نصية
+        const hasPhotos = violationData && (violationData.photos?.length > 0 || violationData.photo);
+        const hasNote = violationData && violationData.note;
+        const isDanger = finalAns === 'لا';
+
+        if (isDanger || hasPhotos || hasNote) {
+            // تحديد نمط الكارت
+            let cardClass = 'card-neutral';
+            let statusColor = '#64748b';
+            
+            if (isDanger) {
+                cardClass = 'card-danger';
+                statusColor = '#dc2626';
+            } else if (finalAns === 'نعم') {
+                cardClass = 'card-success'; // لون أخضر للتوثيق الإيجابي
+                statusColor = '#16a34a';
+            }
+
+            // تجهيز الصور
+            let photosHTML = '';
+            if (hasPhotos) {
+                photosHTML = `<div class="photos-container">`;
+                if (violationData.photos && violationData.photos.length > 0) {
+                    violationData.photos.forEach(src => {
+                        photosHTML += `<img src="${src}" class="large-evidence-img" />`;
+                    });
+                } else if (violationData.photo) {
+                    photosHTML += `<img src="${violationData.photo}" class="large-evidence-img" />`;
+                }
+                photosHTML += `</div>`;
+            }
+
+            detailedItemsHTML += `
+                <div class="observation-card ${cardClass}">
+                    <div class="q-title">${i+1}. ${q}</div>
+                    <div class="q-status">الحالة: <span style="color:${statusColor}">${finalAns}</span></div>
+                    ${hasNote ? `<div class="q-note">📝 ملاحظة: ${violationData.note}</div>` : ''}
+                    ${photosHTML}
+                </div>
+            `;
+        } else {
+            // بنود عادية (جدول مختصر)
+            let rowColor = finalAns === 'نعم' ? '#16a34a' : '#64748b';
+            simpleItemsRows += `
+                <tr>
+                    <td style="width:30px; text-align:center; color:#999;">${i+1}</td>
+                    <td>${q}</td>
+                    <td style="width:80px; font-weight:bold; color:${rowColor}; text-align:center;">${finalAns}</td>
+                </tr>
+            `;
+        }
+    });
+
+    // بناء محتوى التقرير
+    const content = `
+      ${pdfStyles}
+      <div style="padding:15px; max-width: 100%;">
+        
+        <div class="header-section">
+            <h1 class="header-title">مجموعة السلامة ادارة ضواحي الرياض</h1>
+            <div class="header-sub">تقرير تفتيش سلامة ميداني</div>
+        </div>
+        
+        <div class="info-grid">
+             <div><b>رقم التقرير:</b> #${r.serial}</div>
+             <div><b>التاريخ:</b> ${r.timestamp}</div>
+             <div><b>المفتش:</b> ${r.inspector}</div>
+             <div><b>المقاول:</b> ${r.contractor}</div>
+             <div><b>الموقع:</b> ${r.location}</div>
+             <div><b>الاستشاري:</b> ${r.consultant || '-'}</div>
+             <div style="grid-column: span 2;"><b>وصف العمل:</b> ${r.work_desc || '-'}</div>
+             <div style="grid-column: span 2;">
+                <b>الموقع الجغرافي:</b> 
+                ${r.google_maps_link ? `<a href="${r.google_maps_link}" style="color:#005a8f; text-decoration:none;">${r.google_maps_link}</a>` : 'غير متوفر'}
+             </div>
+        </div>
+
+        ${detailedItemsHTML ? `
+            <h3 style="color:#005a8f; margin-top:25px; border-bottom:2px solid #eee; padding-bottom:5px;">📸 الملاحظات الميدانية والتوثيق</h3>
+            <div style="margin-top:15px;">
+                ${detailedItemsHTML}
+            </div>
+        ` : ''}
+
+        ${simpleItemsRows ? `
+            <div style="page-break-inside: avoid;">
+                <h3 style="background:#005a8f; color:white; padding:8px; border-radius:4px; margin-top:30px; font-size:14px;">✅ قائمة الفحص السريع</h3>
+                <table>
+                    <tbody>${simpleItemsRows}</tbody>
+                </table>
+            </div>
+        ` : ''}
+
+        <div class="footer">
+            <div style="text-align:center;">
+                <p style="margin-bottom:5px; font-weight:bold; color:#005a8f;">المفتش</p>
+                <p>${r.inspector}</p>
+            </div>
+            ${r.signature_image ? `
+            <div style="text-align:center;">
+                <p style="margin-bottom:5px; font-weight:bold; color:#005a8f;">توقيع المستلم</p>
+                <img src="${r.signature_image}" style="height:70px; border-bottom:1px solid #ccc;">
+            </div>` : ''}
+        </div>
+      </div>
+    `
+
+    container.innerHTML = content
+
+    // إعدادات التصدير لملف PDF
+    const opt = {
+      margin:       [10, 10, 10, 10],
+      filename:     `Report_${r.contractor}_${r.serial}.pdf`,
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { scale: 2, useCORS: true, scrollY: 0 },
+      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      pagebreak:    { mode: ['css', 'legacy'] }
+    };
+
+    html2pdf().set(opt).from(container).save()
+  }
+
+  // --- Filtering ---
+  const filteredReports = reports.filter(r => 
+    (r.inspector || "").toLowerCase().includes(searchTerm.toLowerCase()) || 
+    (String(r.serial) || "").includes(searchTerm) ||
+    (r.contractor || "").toLowerCase().includes(searchTerm.toLowerCase())
+  )
+
+  // --- Render ---
   return (
-    <div className="app-container">
+    <>
       <style>{styles}</style>
       
+      {modalImage && (
+        <div id="imgModal" onClick={() => setModalImage(null)}>
+          <span className="close-modal">&times;</span>
+          <img src={modalImage} alt="Large View" />
+        </div>
+      )}
+
       {/* Header */}
-      <div className="premium-header" ref={topRef}>
-        <div className="inspector-badge"><i className="fa-solid fa-user-shield"></i><span>{user.username}</span></div>
+      <div className="dashboard-header">
+        <div className="title-container">
+            مجموعة السلامة ادارة ضواحي الرياض
+        </div>
+        <div className="header-actions">
+            <button className="action-btn btn-inspector" onClick={() => navigate('/inspector')}>
+                <i className="fa-solid fa-clipboard-check"></i>
+                <span>تطبيق المفتش</span>
+            </button>
+            <button className="action-btn btn-logout" onClick={() => { sessionStorage.clear(); navigate('/'); }}>
+                <i className="fa-solid fa-power-off"></i>
+                <span>خروج</span>
+            </button>
+        </div>
+      </div>
+
+      <div className="dashboard-container">
+        {/* Tabs */}
+        <div className="tabs-wrapper">
+          <button className={`tab-item ${activeTab === 'reports' ? 'active' : ''}`} onClick={() => setActiveTab('reports')}>
+            <i className="fa-regular fa-file-lines"></i> التقارير
+          </button>
+          <button className={`tab-item ${activeTab === 'inspectors' ? 'active' : ''}`} onClick={() => setActiveTab('inspectors')}>
+            <i className="fa-solid fa-users-gear"></i> المفتشين
+          </button>
+        </div>
         
-        <div style={{display:'flex', gap:'15px', alignItems:'center'}}>
-            
-            {/* زر العودة للمدير (يظهر فقط إذا كان المستخدم أدمن) */}
-            {user.role === 'admin' && (
-                <button 
-                    onClick={() => navigate('/admin')} 
-                    style={{background:'rgba(255,255,255,0.2)', border:'1px solid rgba(255,255,255,0.4)', borderRadius:'8px', color:'white', padding:'5px 10px', cursor:'pointer', fontSize:'14px'}}
-                    title="عودة للوحة التحكم"
-                >
-                    <i className="fa-solid fa-chart-line"></i> مدير
-                </button>
-            )}
-
-            <button onClick={() => { sessionStorage.clear(); navigate('/'); }} style={{background:'none', border:'none', color:'rgba(255,255,255,0.7)', cursor:'pointer', fontSize:'18px'}}><i className="fa-solid fa-arrow-right-from-bracket"></i></button>
-        </div>
-      </div>
-
-      <div style={{padding: '20px 15px'}}>
-        <h2 className="main-title">مجموعة السلامة ادارة ضواحي الرياض</h2>
-        <p style={{margin: '0 0 20px 0', color: '#64748b', fontSize: '14px', textAlign:'center'}}><i className="fa-regular fa-calendar"></i> {new Date().toLocaleDateString('ar-SA')}</p>
-
-        <div className="premium-card">
-          <div className="section-title"><i className="fa-solid fa-location-dot"></i>إثبات الموقع</div>
-          <div className={`verify-item ${geo ? 'done' : ''}`} onClick={getGeo}>
-            <i className={`fa-solid ${geo ? 'fa-map-location-dot' : 'fa-location-crosshairs'} verify-icon`}></i>
-            <div style={{fontWeight:'bold', fontSize:'14px'}}>{geo ? 'تم تحديد الموقع' : 'تحديد الموقع GPS'}</div>
-             <div style={{fontSize:'11px', color:'#94a3b8', marginTop:'5px'}}>{geo ? 'إحداثيات دقيقة ✅' : 'اضغط لتفعيل GPS'}</div>
-          </div>
-        </div>
-
-        <div className="premium-card">
-          <div className="section-title"><i className="fa-solid fa-file-contract"></i>بيانات التقرير</div>
-          <div className="input-wrapper"><label className="input-label">موقع العمل (الحي / الشارع)</label><input className="premium-input" placeholder="الحي / الشارع..." value={formData.location} onChange={(e) => setFormData({...formData, location: e.target.value})} /><i className="fa-solid fa-map-pin input-icon"></i></div>
-          <div className="input-wrapper"><label className="input-label">فريق الزيارة</label><input className="premium-input" placeholder="اسماء فريق الزيارة..." value={formData.visit_team} onChange={(e) => setFormData({...formData, visit_team: e.target.value})} /><i className="fa-solid fa-users input-icon"></i></div>
-          <div className="input-wrapper"><label className="input-label">اسم الاستشاري</label><input className="premium-input" placeholder="اسم الاستشاري..." value={formData.consultant} onChange={(e) => setFormData({...formData, consultant: e.target.value})} /><i className="fa-solid fa-user-tie input-icon"></i></div>
-          <div className="input-wrapper"><label className="input-label">اسم المقاول</label><input className="premium-input" placeholder="اكتب اسم الشركة المنفذة..." value={formData.contractor} onChange={(e) => setFormData({...formData, contractor: e.target.value})} /><i className="fa-solid fa-hard-hat input-icon"></i></div>
-          <div className="input-wrapper"><label className="input-label">رقم المقايسة / أمر العمل</label><input className="premium-input" placeholder="رقم أمر العمل..." value={formData.order_number} onChange={(e) => setFormData({...formData, order_number: e.target.value})} /><i className="fa-solid fa-file-invoice input-icon"></i></div>
-          <div className="input-wrapper"><label className="input-label">وصف العمل</label><input className="premium-input" placeholder="صيانة / تركيب / حفر..." value={formData.work_desc} onChange={(e) => setFormData({...formData, work_desc: e.target.value})} /><i className="fa-solid fa-briefcase input-icon"></i></div>
-          <div className="input-wrapper"><label className="input-label">المستلم</label><input className="premium-input" placeholder="اسم مستلم العمل..." value={formData.receiver} onChange={(e) => setFormData({...formData, receiver: e.target.value})} /><i className="fa-solid fa-user-check input-icon"></i></div>
-        </div>
-
-        <h3 style={{margin:'20px 15px 10px', color:'#0f172a', textAlign:'right'}}>قائمة الفحص</h3>
-        {qList.map((q, i) => {
-          const qIdx = i + 1
-          const currentVal = answers[qIdx]?.val || 'N/A'
-          const isAnswered = answers[qIdx]?.val && answers[qIdx]?.val !== 'N/A'
-          const currentFiles = answers[qIdx]?.files || []
-
-          return (
-            <div key={i} className={`question-card ${isAnswered ? 'answered' : ''}`}>
-              <div className="q-text">{qIdx}. {q}</div>
-              
-              <div className="options-container">
-                <div className={`option-btn yes ${currentVal === 'نعم' ? 'active' : ''}`} onClick={() => handleAnswerChange(qIdx, 'val', 'نعم')}><i className="fa-solid fa-check"></i> نعم</div>
-                <div className={`option-btn no ${currentVal === 'لا' ? 'active' : ''}`} onClick={() => handleAnswerChange(qIdx, 'val', 'لا')}><i className="fa-solid fa-xmark"></i> لا</div>
-                <div className={`option-btn na ${currentVal === 'N/A' ? 'active' : ''}`} onClick={() => handleAnswerChange(qIdx, 'val', 'N/A')}>لا ينطبق</div>
-              </div>
-
-              <div className="actions-row">
-                  <div className="action-btn" onClick={() => document.getElementById(`cam-${qIdx}`).click()}>
-                    <i className="fa-solid fa-camera" style={{color:'var(--primary)'}}></i>التقاط صورة
-                  </div>
-              </div>
-
-              <input type="file" id={`cam-${qIdx}`} style={{display:'none'}} accept="image/*" multiple capture="environment" onChange={(e) => handleAddPhoto(qIdx, e.target.files)} />
-
-              {currentFiles.length > 0 && (
-                  <div className="img-grid">
-                      {currentFiles.map((file, idx) => (
-                          <div key={idx} style={{position:'relative'}}>
-                              <img src={URL.createObjectURL(file)} className="img-thumb" alt="preview" />
-                              <button className="del-btn" onClick={() => removePhoto(qIdx, idx)}>×</button>
-                          </div>
-                      ))}
-                  </div>
-              )}
-              
-              <textarea className="note-input" placeholder="أضف ملاحظاتك هنا..." rows="1" onChange={(e) => handleAnswerChange(qIdx, 'note', e.target.value)} />
+        {/* Reports Tab */}
+        {activeTab === 'reports' && (
+          <div className="section">
+            <div className="search-wrapper">
+              <input type="text" className="search-input" placeholder="🔍 بحث برقم التقرير، المفتش، اسم المقاول..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+              <i className="fa-solid fa-filter search-icon"></i>
             </div>
-          )
-        })}
 
-        <div className="premium-card" ref={sigContainerRef}>
-          <div className="section-title">
-            <i className="fa-solid fa-file-signature"></i>
-            توقيع المستلم <span style={{color:'red', fontSize:'12px', marginRight:'5px'}}>(إجباري)</span>
-          </div>
-          <div className="sig-wrapper" style={{border: '2px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden'}}>
-            <SignatureCanvas ref={sigPad} canvasProps={{ className: 'sig-canvas' }} backgroundColor="rgb(255, 255, 255)" />
-          </div>
-          <button onClick={() => sigPad.current.clear()} style={{marginTop:'10px', color:'#ef4444', background:'none', border:'none', fontWeight:'bold', cursor:'pointer'}}><i className="fa-solid fa-eraser"></i> مسح التوقيع</button>
-        </div>
-      </div>
+            <div id="reportsList">
+              {loading ? <p style={{textAlign:'center', color:'#666'}}>جاري تحميل البيانات...</p> : 
+               filteredReports.length === 0 ? <div style={{textAlign:'center', padding:'40px', background:'white', borderRadius:'16px'}}>📂 لا توجد تقارير مطابقة</div> :
+               filteredReports.map(r => {
+                 const hasViolations = r.violations && r.violations.length > 0;
+                 return (
+                  <div className={`report-card ${hasViolations ? 'violation' : 'safe'}`} key={r.id}>
+                    <div className="card-header">
+                      <div>
+                        <div className="serial-number"><i className="fa-solid fa-hashtag"></i> {r.serial}</div>
+                        <div style={{fontSize:'12px', color:'#94a3b8', marginTop:'5px'}}><i className="fa-regular fa-clock"></i> {r.timestamp}</div>
+                      </div>
+                      <div className={`status-badge ${hasViolations ? 'status-danger' : 'status-safe'}`}>
+                         {hasViolations ? `${r.violations.length} ملاحظات` : 'سليم ✅'}
+                      </div>
+                    </div>
 
-      <div className="floating-footer">
-        <button className="submit-main-btn" onClick={handleSubmit} disabled={loading}>{loading ? <i className="fa-solid fa-spinner fa-spin"></i> : <i className="fa-regular fa-paper-plane"></i>} {btnText}</button>
+                    <div className="info-grid">
+                      <div className="info-item"><span className="info-label">المفتش</span><span className="info-value"><i className="fa-solid fa-user-shield" style={{color:'#005a8f'}}></i> {r.inspector}</span></div>
+                      <div className="info-item"><span className="info-label">المقاول</span><span className="info-value"><i className="fa-solid fa-hard-hat" style={{color:'#f59e0b'}}></i> {r.contractor}</span></div>
+                      <div className="info-item"><span className="info-label">فريق الزيارة</span><span className="info-value">{r.visit_team || '-'}</span></div>
+                      <div className="info-item"><span className="info-label">الموقع</span><span className="info-value">
+                           {r.google_maps_link ? 
+                             <a href={r.google_maps_link} target="_blank" rel="noreferrer" style={{color:'#2563eb', textDecoration:'none', display:'flex', alignItems:'center', gap:'5px'}}>
+                               <i className="fa-solid fa-location-dot"></i> {r.location || 'الخريطة'}
+                             </a> 
+                             : <span style={{color:'red'}}>غير محدد</span>}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="action-grid">
+                      <button className="btn-action-card btn-view" onClick={() => setExpandedReport(expandedReport === r.id ? null : r.id)}>
+                        <i className={`fa-solid ${expandedReport === r.id ? 'fa-chevron-up' : 'fa-eye'}`}></i> التفاصيل
+                      </button>
+                      <button className="btn-action-card btn-pdf" onClick={() => generatePDF(r)}>
+                        <i className="fa-solid fa-file-pdf"></i> PDF
+                      </button>
+                      <button className="btn-action-card btn-delete" onClick={() => deleteReport(r.id)}>
+                        <i className="fa-solid fa-trash"></i>
+                      </button>
+                    </div>
+
+                    {expandedReport === r.id && (
+                      <div className="details-panel">
+                        <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'10px', marginBottom:'15px', paddingBottom:'15px', borderBottom:'1px solid #ddd', fontSize:'13px'}}>
+                             <div><b>الاستشاري:</b> {r.consultant || '-'}</div>
+                             <div><b>المستلم:</b> {r.receiver || '-'}</div>
+                             <div><b>وصف العمل:</b> {r.work_desc || '-'}</div>
+                        </div>
+                        <div style={{maxHeight:'300px', overflowY:'auto'}}>
+                          {fullQuestionsList.map((q, i) => {
+                            const answerObj = r.answers ? r.answers[i+1] : null;
+                            const ans = answerObj ? (answerObj.val || answerObj) : "N/A";
+                            const isViolation = r.violations?.some(v => v.q === q);
+                            const displayAns = isViolation ? "لا" : (ans === "N/A" || ans === "لا ينطبق" ? "لا ينطبق" : ans);
+                            return (
+                              <div className="q-row" key={i}>
+                                <div style={{flex:1, paddingLeft:'10px'}}>{q}</div>
+                                <div style={{fontWeight:'bold', color: displayAns==='نعم'?'#16a34a': displayAns==='لا'?'#dc2626':'#64748b', background: displayAns==='نعم'?'#dcfce7': displayAns==='لا'?'#fee2e2':'#f1f5f9', padding: '2px 8px', borderRadius:'4px', fontSize:'11px', whiteSpace:'nowrap'}}>
+                                  {displayAns}
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                 )
+               })
+              }
+            </div>
+          </div>
+        )}
+
+        {/* Inspectors Tab */}
+        {activeTab === 'inspectors' && (
+          <div className="section">
+            <div className="add-inspector-box">
+              <h3 style={{ color: 'var(--main-blue)', marginBottom: '15px' }}><i className="fa-solid fa-user-plus"></i> إضافة مفتش جديد</h3>
+              <div className="input-row">
+                <input className="form-input" placeholder="اسم المفتش" value={newInspectorName} onChange={(e) => setNewInspectorName(e.target.value)} />
+                <div style={{position:'relative', flex:1}}>
+                  <input type={showPassword['new'] ? "text" : "password"} className="form-input" placeholder="كلمة المرور" style={{width:'100%'}} value={newInspectorPass} onChange={(e) => setNewInspectorPass(e.target.value)} />
+                  <i className={`fa-regular ${showPassword['new'] ? "fa-eye-slash" : "fa-eye"}`} style={{position:'absolute', left:'10px', top:'50%', transform:'translateY(-50%)', cursor:'pointer', color:'#94a3b8'}} onClick={() => togglePassVisibility('new')}></i>
+                </div>
+              </div>
+              <button className="btn-add" onClick={addInspector}>حفظ البيانات</button>
+            </div>
+
+            <div style={{background:'white', padding:'20px', borderRadius:'16px'}}>
+              <h3 style={{ color: 'var(--main-blue)', marginBottom: '15px' }}>👥 فريق المفتشين الحالي</h3>
+              {inspectorsList.map((insp) => (
+                <div className="inspector-card" key={insp.id}>
+                  <div style={{display:'flex', alignItems:'center', gap:'10px'}}>
+                    <div style={{width:'40px', height:'40px', background:'#e0f2fe', borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', color:'#0284c7'}}><i className="fa-solid fa-user"></i></div>
+                    <div><div style={{fontWeight:'bold'}}>{insp.username}</div><div style={{fontSize:'11px', color:'#64748b'}}>Safety Inspector</div></div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{background:'#f8fafc', padding:'5px 10px', borderRadius:'6px', display:'flex', alignItems:'center', gap:'5px', border:'1px solid #e2e8f0'}}>
+                      <input type={showPassword[insp.username] ? "text" : "password"} value={insp.password} readOnly style={{ border: 'none', background: 'none', width: '80px', textAlign: 'center', fontSize:'13px', color:'#475569' }} />
+                      <i className={`fa-regular ${showPassword[insp.username] ? "fa-eye-slash" : "fa-eye"}`} style={{ cursor: 'pointer', color: '#94a3b8', fontSize:'13px' }} onClick={() => togglePassVisibility(insp.username)}></i>
+                    </div>
+                    <button onClick={() => deleteInspector(insp.username)} style={{ background: '#fee2e2', color: '#dc2626', border: 'none', width:'35px', height:'35px', borderRadius: '8px', cursor: 'pointer' }}><i className="fa-solid fa-trash-can"></i></button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
-    </div>
+    </>
   )
 }
 
-export default InspectorApp
+export default AdminDashboard
