@@ -212,7 +212,7 @@ const InspectorApp = () => {
       
       {/* Header */}
       <div className="app-header">
-        <div className="logo-box">الشركة السعودية</div>
+        <div className="logo-box">مجموعة السلامة ادارة ضواحي الرياض</div>
         <div className="user-pill">
            <span>{user.username || 'Admin'}</span>
            <i className="fa-solid fa-user-circle"></i>
@@ -252,26 +252,69 @@ const InspectorApp = () => {
             بيانات التقرير
         </div>
 
-        <div className="input-group">
-            <i className="fa-solid fa-helmet-safety input-icon"></i>
-            <input className="modern-input" placeholder="اسم المقاول" value={formData.contractor} onChange={e=>setFormData({...formData, contractor: e.target.value})} />
-        </div>
+        <div className="form-container">
+    {/* حقل التاريخ - يظهر في الصورة الثانية */}
+    <div className="input-group">
+        <i className="fa-solid fa-calendar-days input-icon"></i>
+        <input type="date" className="modern-input" value={formData.date} onChange={e=>setFormData({...formData, date: e.target.value})} />
+    </div>
 
-        <div className="input-group">
-            <i className="fa-solid fa-list-check input-icon"></i>
-            <input className="modern-input" placeholder="رقم الأمر / المهمة" value={formData.work_order_no} onChange={e=>setFormData({...formData, work_order_no: e.target.value})} />
-        </div>
-        
-        <div className="input-group">
-            <i className="fa-solid fa-user-tie input-icon"></i>
-            <input className="modern-input" placeholder="اسم الاستشاري" value={formData.consultant} onChange={e=>setFormData({...formData, consultant: e.target.value})} />
-        </div>
+    {/* اسم الاستشاري */}
+    <div className="input-group">
+        <i className="fa-solid fa-user-tie input-icon"></i>
+        <input className="modern-input" placeholder="اسم الاستشاري" value={formData.consultant} onChange={e=>setFormData({...formData, consultant: e.target.value})} />
+    </div>
 
-        <div className="input-group">
-            <i className="fa-solid fa-map-pin input-icon"></i>
-            <input className="modern-input" placeholder="وصف مكان العمل" value={formData.location} onChange={e=>setFormData({...formData, location: e.target.value})} />
-        </div>
-      </div>
+    {/* اسم المقاول */}
+    <div className="input-group">
+        <i className="fa-solid fa-helmet-safety input-icon"></i>
+        <input className="modern-input" placeholder="اسم المقاول" value={formData.contractor} onChange={e=>setFormData({...formData, contractor: e.target.value})} />
+    </div>
+
+    {/* موقع العمل */}
+    <div className="input-group">
+        <i className="fa-solid fa-map-pin input-icon"></i>
+        <input className="modern-input" placeholder="موقع العمل" value={formData.location} onChange={e=>setFormData({...formData, location: e.target.value})} />
+    </div>
+
+    {/* --- الإضافات الجديدة بناءً على الصور --- */}
+
+    {/* اسم الحي */}
+    <div className="input-group">
+        <i className="fa-solid fa-city input-icon"></i>
+        <input className="modern-input" placeholder="اسم الحي" value={formData.district} onChange={e=>setFormData({...formData, district: e.target.value})} />
+    </div>
+
+    {/* اسم فريق الزيارة */}
+    <div className="input-group">
+        <i className="fa-solid fa-users input-icon"></i>
+        <input className="modern-input" placeholder="اسم فريق الزيارة" value={formData.visit_team} onChange={e=>setFormData({...formData, visit_team: e.target.value})} />
+    </div>
+
+    {/* اسم المشرف */}
+    <div className="input-group">
+        <i className="fa-solid fa-user-check input-icon"></i>
+        <input className="modern-input" placeholder="اسم المشرف" value={formData.supervisor} onChange={e=>setFormData({...formData, supervisor: e.target.value})} />
+    </div>
+
+    {/* رقم الأمر / المهمة */}
+    <div className="input-group">
+        <i className="fa-solid fa-list-check input-icon"></i>
+        <input className="modern-input" placeholder="رقم ( المقايسة / امر العمل / المهمة )" value={formData.work_order_no} onChange={e=>setFormData({...formData, work_order_no: e.target.value})} />
+    </div>
+
+    {/* وصف العمل */}
+    <div className="input-group">
+        <i className="fa-solid fa-pen-to-square input-icon"></i>
+        <textarea className="modern-input" placeholder="وصف العمل" value={formData.work_description} onChange={e=>setFormData({...formData, work_description: e.target.value})} rows="3"></textarea>
+    </div>
+
+    {/* اسم المستلم (يظهر في أسفل الصورة الثانية) */}
+    <div className="input-group">
+        <i className="fa-solid fa-signature input-icon"></i>
+        <input className="modern-input" placeholder="اسم المستلم" value={formData.receiver} onChange={e=>setFormData({...formData, receiver: e.target.value})} />
+    </div>
+</div>
 
       {/* Questions */}
       <div className="content-card">
