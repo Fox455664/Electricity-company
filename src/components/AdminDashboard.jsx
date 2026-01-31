@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import html2pdf from 'html2pdf.js'
 import { supabase } from '../supabaseClient'
 
-// قائمة الأسئلة الموحدة
+// قائمة الأسئلة الموحدة (41 بند)
 const fullQuestionsList = [
     "تصريح العمل الأساسي والثانوي متواجد بموقع العمل", 
     "اجتماع ما قبل البدء بالعمل متواجد بموقع العمل", 
@@ -222,10 +222,11 @@ const AdminDashboard = () => {
     setShowPassword(prev => ({ ...prev, [username]: !prev[username] }))
   }
 
-  // --- PDF Generation Logic (المعدل: تسلسل كامل بدون جداول مفصولة) ---
+  // --- PDF Generation Logic (تحديث: البيانات بالأعلى، الملاحظات بالصور في الوسط، القائمة الكاملة في النهاية) ---
   const generatePDF = (r) => {
     const container = document.createElement('div')
     
+    // إعدادات CSS
     const pdfStyles = `
       <style>
         @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap');
@@ -235,141 +236,106 @@ const AdminDashboard = () => {
         .header-title { color: #005a8f; font-size: 22px; font-weight: 800; margin: 0; }
         .header-sub { color: #666; font-size: 13px; margin: 5px 0; }
 
+        /* جدول البيانات الأساسي (في الأعلى) */
         .info-grid { 
             display: grid; grid-template-columns: 1fr 1fr; gap: 8px; 
-            font-size: 11px; background: #f8fafc; padding: 10px; 
-            border-radius: 8px; margin-bottom: 20px; border: 1px solid #e2e8f0; 
+            font-size: 11px; background: #fff; padding: 10px; 
+            border: 1px solid #cbd5e1; border-radius: 8px; margin-bottom: 20px;
         }
+        .info-cell { display: flex; flex-direction: column; border-bottom: 1px solid #f1f5f9; padding-bottom: 4px; }
+        .info-label { font-weight: bold; color: #005a8f; font-size: 10px; margin-bottom: 2px; }
+        .info-val { font-weight: 600; font-size: 11px; color: #333; }
 
-        /* حاوية البند (سواء كبير أو صغير) - تمنع القص */
-        .item-wrapper {
-            margin-bottom: 8px;
-            page-break-inside: avoid; 
-            break-inside: avoid;
-        }
-
-        /* التصميم 1: الكارت التفصيلي (للصور والمخالفات والملاحظات) */
+        /* قسم الملاحظات (الكروت الكبيرة) */
         .observation-card {
             background: #fff;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 12px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        }
-
-        /* التصميم 2: الشريط المختصر (حالات نعم/لا ينطبق بدون صور) */
-        .simple-strip {
-            background: #fff;
             border: 1px solid #e2e8f0;
+            border-right: 4px solid #dc2626; /* أحمر للملاحظات */
             border-radius: 6px;
-            padding: 8px 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 12px;
+            padding: 10px;
+            margin-bottom: 10px;
+            page-break-inside: avoid;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.03);
         }
-
-        /* الألوان للحالات */
-        .status-danger { border-right: 5px solid #dc2626; background-color: #fef2f2; }
-        .status-success { border-right: 5px solid #16a34a; background-color: #f0fdf4; }
-        .status-neutral { border-right: 5px solid #94a3b8; background-color: #f8fafc; }
-
         .q-title { font-weight: 800; font-size: 13px; color: #1e293b; margin-bottom: 5px; }
-        .q-ans-badge { font-weight: bold; padding: 2px 8px; border-radius: 4px; font-size: 11px; }
-        
-        .q-note { font-size: 11px; color: #555; background: rgba(255,255,255,0.7); padding: 5px; border-radius: 4px; border: 1px dashed #ccc; margin-top: 5px; }
+        .q-note { font-size: 11px; background: #fff1f2; color: #991b1b; padding: 5px; border-radius: 4px; border: 1px dashed #fca5a5; margin-top: 5px; }
+        .photos-container { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+        .evidence-img { width: 48%; height: 160px; object-fit: cover; border-radius: 4px; border: 1px solid #ccc; }
 
-        .photos-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-top: 8px;
-        }
-        .evidence-img {
-            width: 48%; 
-            height: 180px; 
-            object-fit: cover; 
-            border-radius: 6px;
-            border: 1px solid #cbd5e1;
-            background-color: #fff;
-        }
+        /* القائمة النهائية (الجدول المجمع في النهاية) */
+        .checklist-table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 20px; page-break-inside: auto; }
+        .checklist-table th { background: #005a8f; color: white; padding: 8px; text-align: right; font-weight: bold; }
+        .checklist-table td { border-bottom: 1px solid #e2e8f0; padding: 6px; color: #475569; }
+        .checklist-table tr { page-break-inside: avoid; }
+        .status-cell { font-weight: bold; text-align: center; width: 80px; }
 
         .footer { margin-top: 30px; display: flex; justify-content: space-between; page-break-inside: avoid; border-top: 1px solid #eee; padding-top: 20px; }
       </style>
     `
 
-    let allItemsHTML = ''
+    // 1. توليد كروت الملاحظات (التي تحتوي على صور أو ملاحظات أو مخالفات فقط)
+    let observationsHTML = '';
+    let hasObservations = false;
 
-    // دمج جميع الأسئلة في قائمة واحدة متسلسلة (1 إلى 41)
     fullQuestionsList.forEach((q, i) => {
-        // البحث عن البيانات في التقرير
         const violationData = r.violations?.find(v => v.q === q);
         const normalAns = r.answers && r.answers[i+1];
-        let finalAns = "لا ينطبق";
-        
-        if (violationData) finalAns = violationData.ans;
-        else if (normalAns) finalAns = normalAns.val || normalAns;
-        
+        let finalAns = violationData ? violationData.ans : (normalAns ? (normalAns.val || normalAns) : "لا ينطبق");
         if (finalAns === 'N/A') finalAns = 'لا ينطبق';
 
-        // الشروط لتحديد شكل العرض
         const hasPhotos = violationData && (violationData.photos?.length > 0 || violationData.photo);
         const hasNote = violationData && violationData.note;
         const isDanger = finalAns === 'لا';
-        const isSuccess = finalAns === 'نعم';
 
-        // تحديد الألوان
-        let statusClass = 'status-neutral';
-        let ansColor = '#64748b'; // رمادي
-        let ansBg = '#f1f5f9';
-
-        if (isDanger) {
-            statusClass = 'status-danger';
-            ansColor = '#dc2626'; ansBg = '#fee2e2';
-        } else if (isSuccess) {
-            statusClass = 'status-success';
-            ansColor = '#16a34a'; ansBg = '#dcfce7';
-        }
-
-        // إذا كان هناك صور أو مخالفة أو ملاحظة -> اعرض كارت كبير
-        if (isDanger || hasPhotos || hasNote) {
-            
-            // تجهيز الصور
+        // شرط العرض في قسم "الملاحظات المصورة": وجود صورة، أو ملاحظة نصية، أو الإجابة "لا"
+        if (hasPhotos || hasNote || isDanger) {
+            hasObservations = true;
             let photosHTML = '';
             if (hasPhotos) {
                 photosHTML = `<div class="photos-container">`;
                 if (violationData.photos && violationData.photos.length > 0) {
-                    violationData.photos.forEach(src => {
-                        photosHTML += `<img src="${src}" class="evidence-img" />`;
-                    });
+                    violationData.photos.forEach(src => photosHTML += `<img src="${src}" class="evidence-img" />`);
                 } else if (violationData.photo) {
                     photosHTML += `<img src="${violationData.photo}" class="evidence-img" />`;
                 }
                 photosHTML += `</div>`;
             }
 
-            allItemsHTML += `
-                <div class="item-wrapper observation-card ${statusClass}">
-                    <div style="display:flex; justify-content:space-between; align-items:start;">
+            observationsHTML += `
+                <div class="observation-card">
+                    <div style="display:flex; justify-content:space-between;">
                         <div class="q-title">${i+1}. ${q}</div>
-                        <div class="q-ans-badge" style="color:${ansColor}; background:${ansBg}">${finalAns}</div>
+                        <div style="font-weight:bold; color:${isDanger ? '#dc2626' : '#005a8f'}">${finalAns}</div>
                     </div>
                     ${hasNote ? `<div class="q-note">📝 ${violationData.note}</div>` : ''}
                     ${photosHTML}
                 </div>
             `;
-        } else {
-            // شريط صغير (للبنود السليمة أو N/A بدون صور)
-            allItemsHTML += `
-                <div class="item-wrapper simple-strip ${statusClass}">
-                    <div style="font-weight:600; color:#334155;">${i+1}. ${q}</div>
-                    <div class="q-ans-badge" style="color:${ansColor}; background:${ansBg}">${finalAns}</div>
-                </div>
-            `;
         }
     });
 
-    // محتوى التقرير النهائي
+    // 2. توليد الجدول الكامل في النهاية (جميع البنود 1-41)
+    let fullListRows = '';
+    fullQuestionsList.forEach((q, i) => {
+        const violationData = r.violations?.find(v => v.q === q);
+        const normalAns = r.answers && r.answers[i+1];
+        let finalAns = violationData ? violationData.ans : (normalAns ? (normalAns.val || normalAns) : "لا ينطبق");
+        if (finalAns === 'N/A') finalAns = 'لا ينطبق';
+
+        let color = '#64748b'; // رمادي
+        if (finalAns === 'نعم') color = '#16a34a';
+        if (finalAns === 'لا') color = '#dc2626';
+
+        fullListRows += `
+            <tr>
+                <td style="width:30px; text-align:center; color:#999;">${i+1}</td>
+                <td>${q}</td>
+                <td class="status-cell" style="color:${color}">${finalAns}</td>
+            </tr>
+        `;
+    });
+
+    // بناء التقرير النهائي
     const content = `
       ${pdfStyles}
       <div style="padding:15px; max-width: 100%;">
@@ -379,26 +345,57 @@ const AdminDashboard = () => {
             <div class="header-sub">تقرير تفتيش سلامة ميداني</div>
         </div>
         
+        <!-- البيانات كما في الصور (بالأعلى) -->
         <div class="info-grid">
-             <div><b>رقم التقرير:</b> #${r.serial}</div>
-             <div><b>التاريخ:</b> ${r.timestamp}</div>
-             <div><b>المفتش:</b> ${r.inspector}</div>
-             <div><b>المقاول:</b> ${r.contractor}</div>
-             <div><b>الموقع:</b> ${r.location}</div>
-             <div><b>الاستشاري:</b> ${r.consultant || '-'}</div>
-             <div style="grid-column: span 2;"><b>وصف العمل:</b> ${r.work_desc || '-'}</div>
-             <div style="grid-column: span 2;">
-                <b>الموقع الجغرافي:</b> 
-                ${r.google_maps_link ? `<a href="${r.google_maps_link}" style="color:#005a8f; text-decoration:none;">${r.google_maps_link}</a>` : 'غير متوفر'}
+             <div class="info-cell"><span class="info-label">المقاول</span><span class="info-val">${r.contractor || '-'}</span></div>
+             <div class="info-cell"><span class="info-label">رقم المقايسة / أمر العمل</span><span class="info-val">${r.work_order_number || r.serial || '-'}</span></div>
+             
+             <div class="info-cell" style="grid-column: span 2;"><span class="info-label">وصف العمل</span><span class="info-val">${r.work_desc || '-'}</span></div>
+             
+             <div class="info-cell"><span class="info-label">المستلم</span><span class="info-val">${r.receiver || '-'}</span></div>
+             <div class="info-cell"><span class="info-label">فريق الزيارة</span><span class="info-val">${r.visit_team || '-'}</span></div>
+             
+             <div class="info-cell"><span class="info-label">الاستشاري</span><span class="info-val">${r.consultant || '-'}</span></div>
+             <div class="info-cell"><span class="info-label">الموقع (الحي/الشارع)</span><span class="info-val">${r.location || '-'}</span></div>
+             
+             <div class="info-cell"><span class="info-label">التاريخ</span><span class="info-val">${r.timestamp}</span></div>
+             <div class="info-cell"><span class="info-label">المفتش</span><span class="info-val">${r.inspector}</span></div>
+
+             <div class="info-cell" style="grid-column: span 2; border:none;">
+                <span class="info-label">رابط الموقع:</span> 
+                ${r.google_maps_link ? `<a href="${r.google_maps_link}" style="color:#005a8f; font-size:10px;">${r.google_maps_link}</a>` : '-'}
              </div>
         </div>
 
-        <h3 style="color:#005a8f; border-bottom:2px solid #eee; padding-bottom:5px; margin-bottom:15px; font-size:16px;">
-            📋 قائمة الفحص والتوثيق (${fullQuestionsList.length} بند)
-        </h3>
+        <!-- قسم الملاحظات الموثقة (في الوسط) -->
+        ${hasObservations ? `
+            <h3 style="color:#dc2626; border-bottom:2px solid #fee2e2; padding-bottom:5px; margin-top:20px;">
+                📸 الملاحظات الميدانية والتوثيق
+            </h3>
+            <div style="margin-top:10px;">${observationsHTML}</div>
+        ` : `
+            <div style="text-align:center; padding:20px; color:#16a34a; border:1px dashed #bbf7d0; background:#f0fdf4; border-radius:8px; margin:20px 0;">
+                ✅ لا توجد ملاحظات أو مخالفات موثقة في هذا التقرير
+            </div>
+        `}
 
-        <div style="margin-top:10px;">
-            ${allItemsHTML}
+        <!-- القائمة الكاملة (في النهاية) -->
+        <div style="page-break-before: always;">
+            <h3 style="background:#005a8f; color:white; padding:10px; border-radius:4px 4px 0 0; margin-bottom:0; font-size:14px;">
+                ✅ قائمة الفحص السريع (التقرير الكامل)
+            </h3>
+            <table class="checklist-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>البند</th>
+                        <th>الحالة</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${fullListRows}
+                </tbody>
+            </table>
         </div>
 
         <div class="footer">
@@ -417,7 +414,6 @@ const AdminDashboard = () => {
 
     container.innerHTML = content
 
-    // إعدادات التصدير
     const opt = {
       margin:       [10, 10, 10, 10],
       filename:     `Report_${r.contractor}_${r.serial}.pdf`,
