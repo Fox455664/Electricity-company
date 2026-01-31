@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import html2pdf from 'html2pdf.js'
 import { supabase } from '../supabaseClient'
-import { DownloadPDFButton } from './SafetyReportPDF.jsx
-// --- قائمة الأسئلة الموحدة ---
+
+// قائمة الأسئلة الموحدة
 const fullQuestionsList = [
     "تصريح العمل الأساسي والثانوي متواجد بموقع العمل", 
     "اجتماع ما قبل البدء بالعمل متواجد بموقع العمل", 
@@ -66,7 +66,7 @@ const AdminDashboard = () => {
   const [newInspectorPass, setNewInspectorPass] = useState('')
   const [showPassword, setShowPassword] = useState({})
 
-  // --- Styles Injection (ستايل لوحة التحكم - لا يؤثر على PDF) ---
+  // --- Styles Injection ---
   const styles = `
     :root { 
       --main-blue: #005a8f; 
@@ -106,6 +106,8 @@ const AdminDashboard = () => {
     .info-item { display: flex; flex-direction: column; }
     .info-label { font-size: 12px; color: var(--text-light); margin-bottom: 4px; font-weight: 600; }
     .info-value { font-size: 14px; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 6px; }
+    .violations-container { background: #fff1f2; border: 1px solid #fecaca; border-radius: 12px; padding: 15px; margin: 15px 0; }
+    .v-item { background: white; padding: 12px; border-radius: 8px; border: 1px solid #fcd34d; margin-bottom: 8px; font-size: 13px; }
     .action-grid { display: flex; gap: 10px; margin-top: 20px; }
     .btn-action-card { flex: 1; padding: 12px; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-family: 'Cairo'; font-size: 14px; }
     .btn-view { background: #eff6ff; color: var(--main-blue); }
@@ -128,7 +130,7 @@ const AdminDashboard = () => {
     }
   `;
 
-  // --- Logic Setup ---
+  // --- Auth & Initial Load ---
   useEffect(() => {
     const userData = sessionStorage.getItem('user')
     if (!userData) {
@@ -145,53 +147,287 @@ const AdminDashboard = () => {
     }
   }, [])
 
+  // --- Data Fetching ---
   const fetchReports = async () => {
     setLoading(true)
     try {
-      const { data, error } = await supabase.from('reports').select('*').order('created_at', { ascending: false })
+      const { data, error } = await supabase
+        .from('reports')
+        .select('*')
+        .order('created_at', { ascending: false })
       if (error) throw error
       setReports(data || [])
-    } catch (err) { alert('خطأ: ' + err.message) } finally { setLoading(false) }
+    } catch (err) {
+      alert('خطأ: ' + err.message)
+    } finally {
+      setLoading(false)
+    }
   }
 
   const fetchInspectors = async () => {
     try {
-      const { data } = await supabase.from('users').select('*').neq('role', 'admin')
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .neq('role', 'admin')
+      if (error) throw error
       setInspectorsList(data || [])
-    } catch (err) { console.error(err) }
+    } catch (err) {
+      console.error(err)
+    }
   }
 
+  // --- Actions ---
   const addInspector = async () => {
     if (!newInspectorName || !newInspectorPass) return alert('أكمل البيانات')
     try {
-      await supabase.from('users').insert([{ username: newInspectorName, password: newInspectorPass, role: 'inspector' }])
-      alert('تمت الإضافة بنجاح'); setNewInspectorName(''); setNewInspectorPass(''); fetchInspectors()
-    } catch (err) { alert('خطأ في الإضافة') }
+      const { error } = await supabase
+        .from('users')
+        .insert([{ username: newInspectorName, password: newInspectorPass, role: 'inspector' }])
+      
+      if (error) throw error
+      
+      alert('تمت الإضافة بنجاح')
+      setNewInspectorName('')
+      setNewInspectorPass('')
+      fetchInspectors()
+    } catch (err) {
+      alert('خطأ في الإضافة: ' + err.message)
+    }
   }
 
   const deleteInspector = async (username) => {
-    if (!window.confirm('هل أنت متأكد؟')) return
-    await supabase.from('users').delete().eq('username', username)
-    fetchInspectors()
+    if (!window.confirm('هل أنت متأكد من حذف هذا المفتش؟')) return
+    try {
+      const { error } = await supabase.from('users').delete().eq('username', username)
+      if (error) throw error
+      fetchInspectors()
+    } catch (err) {
+      alert('خطأ: ' + err.message)
+    }
   }
 
   const deleteReport = async (id) => {
-    if (!window.confirm('حذف التقرير؟')) return
-    await supabase.from('reports').delete().eq('id', id)
-    setReports(reports.filter(r => r.id !== id))
+    if (!window.confirm('هل أنت متأكد من حذف التقرير؟')) return
+    try {
+      const { error } = await supabase.from('reports').delete().eq('id', id)
+      if (error) throw error
+      setReports(reports.filter(r => r.id !== id))
+    } catch (err) {
+      alert('خطأ: ' + err.message)
+    }
   }
 
   const togglePassVisibility = (username) => {
     setShowPassword(prev => ({ ...prev, [username]: !prev[username] }))
   }
 
-  // ==========================================================
-  // === PDF GENERATION LOGIC (المعدل كلياً: صور كبيرة وواضحة) ===
-  // ==========================================================
-  // ==========================================================
-// === PDF GENERATION (ENTERPRISE / NO CUT / NO LOSS) =======
-// ==========================================================
+  // --- PDF Generation Logic (المعدل والمحسن) ---
+  const generatePDF = (r) => {
+    const container = document.createElement('div')
+    
+    // إعدادات CSS للطباعة (منع التقطيع وتنسيق الكروت)
+    const pdfStyles = `
+      <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap');
+        body { font-family: 'Cairo', sans-serif; direction: rtl; color: #333; -webkit-print-color-adjust: exact; }
+        
+        .header-section { text-align: center; border-bottom: 3px solid #f28b00; padding-bottom: 15px; margin-bottom: 20px; }
+        .header-title { color: #005a8f; font-size: 24px; font-weight: 800; margin: 0; }
+        .header-sub { color: #666; font-size: 14px; margin: 5px 0; }
 
+        .info-grid { 
+            display: grid; grid-template-columns: 1fr 1fr; gap: 8px; 
+            font-size: 12px; background: #f8fafc; padding: 15px; 
+            border-radius: 8px; margin-bottom: 20px; border: 1px solid #e2e8f0; 
+        }
+
+        /* كارت الملاحظة */
+        .observation-card {
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            page-break-inside: avoid; /* منع القص */
+            break-inside: avoid;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        /* ألوان الكارت */
+        .card-danger { border-right: 5px solid #dc2626; background-color: #fef2f2; }
+        .card-success { border-right: 5px solid #16a34a; background-color: #f0fdf4; }
+        .card-neutral { border-right: 5px solid #64748b; background-color: #f8fafc; }
+
+        .q-title { font-weight: 800; font-size: 14px; margin-bottom: 8px; color: #1e293b; }
+        .q-status { font-size: 12px; font-weight: bold; margin-bottom: 5px; }
+        .q-note { font-size: 12px; color: #555; background: rgba(255,255,255,0.7); padding: 5px; border-radius: 4px; border: 1px dashed #ccc; margin-bottom: 10px; }
+
+        /* حاوية الصور الكبيرة */
+        .photos-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+            justify-content: flex-start;
+        }
+        .large-evidence-img {
+            width: 48%; /* عرض كبير للصورة */
+            height: 220px; 
+            object-fit: cover; 
+            border-radius: 6px;
+            border: 1px solid #cbd5e1;
+            background-color: #fff;
+        }
+
+        table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 20px; }
+        th { background: #005a8f; color: white; padding: 8px; text-align: right; }
+        td { border-bottom: 1px solid #eee; padding: 6px; }
+        tr { page-break-inside: avoid; }
+
+        .footer { margin-top: 30px; display: flex; justify-content: space-between; page-break-inside: avoid; }
+      </style>
+    `
+
+    let detailedItemsHTML = ''
+    let simpleItemsRows = ''
+
+    fullQuestionsList.forEach((q, i) => {
+        // البحث عن البند في قائمة الانتهاكات
+        const violationData = r.violations?.find(v => v.q === q);
+        // البحث عن الإجابة في القائمة العادية
+        const normalAns = r.answers && r.answers[i+1];
+        let finalAns = "لا ينطبق";
+
+        if (violationData) finalAns = violationData.ans;
+        else if (normalAns) finalAns = normalAns.val || normalAns;
+        
+        if (finalAns === 'N/A') finalAns = 'لا ينطبق';
+
+        // الشروط لعرض البند في كارت تفصيلي:
+        // 1. إذا كانت الإجابة "لا" (مخالفة) -> أحمر
+        // 2. إذا كانت "نعم" + يوجد صور (توثيق) -> أخضر
+        // 3. إذا كان هناك ملاحظة نصية
+        const hasPhotos = violationData && (violationData.photos?.length > 0 || violationData.photo);
+        const hasNote = violationData && violationData.note;
+        const isDanger = finalAns === 'لا';
+
+        if (isDanger || hasPhotos || hasNote) {
+            // تحديد نمط الكارت
+            let cardClass = 'card-neutral';
+            let statusColor = '#64748b';
+            
+            if (isDanger) {
+                cardClass = 'card-danger';
+                statusColor = '#dc2626';
+            } else if (finalAns === 'نعم') {
+                cardClass = 'card-success'; // لون أخضر للتوثيق الإيجابي
+                statusColor = '#16a34a';
+            }
+
+            // تجهيز الصور
+            let photosHTML = '';
+            if (hasPhotos) {
+                photosHTML = `<div class="photos-container">`;
+                if (violationData.photos && violationData.photos.length > 0) {
+                    violationData.photos.forEach(src => {
+                        photosHTML += `<img src="${src}" class="large-evidence-img" />`;
+                    });
+                } else if (violationData.photo) {
+                    photosHTML += `<img src="${violationData.photo}" class="large-evidence-img" />`;
+                }
+                photosHTML += `</div>`;
+            }
+
+            detailedItemsHTML += `
+                <div class="observation-card ${cardClass}">
+                    <div class="q-title">${i+1}. ${q}</div>
+                    <div class="q-status">الحالة: <span style="color:${statusColor}">${finalAns}</span></div>
+                    ${hasNote ? `<div class="q-note">📝 ملاحظة: ${violationData.note}</div>` : ''}
+                    ${photosHTML}
+                </div>
+            `;
+        } else {
+            // بنود عادية (جدول مختصر)
+            let rowColor = finalAns === 'نعم' ? '#16a34a' : '#64748b';
+            simpleItemsRows += `
+                <tr>
+                    <td style="width:30px; text-align:center; color:#999;">${i+1}</td>
+                    <td>${q}</td>
+                    <td style="width:80px; font-weight:bold; color:${rowColor}; text-align:center;">${finalAns}</td>
+                </tr>
+            `;
+        }
+    });
+
+    // بناء محتوى التقرير
+    const content = `
+      ${pdfStyles}
+      <div style="padding:15px; max-width: 100%;">
+        
+        <div class="header-section">
+            <h1 class="header-title">مجموعة السلامة ادارة ضواحي الرياض</h1>
+            <div class="header-sub">تقرير تفتيش سلامة ميداني</div>
+        </div>
+        
+        <div class="info-grid">
+             <div><b>رقم التقرير:</b> #${r.serial}</div>
+             <div><b>التاريخ:</b> ${r.timestamp}</div>
+             <div><b>المفتش:</b> ${r.inspector}</div>
+             <div><b>المقاول:</b> ${r.contractor}</div>
+             <div><b>الموقع:</b> ${r.location}</div>
+             <div><b>الاستشاري:</b> ${r.consultant || '-'}</div>
+             <div style="grid-column: span 2;"><b>وصف العمل:</b> ${r.work_desc || '-'}</div>
+             <div style="grid-column: span 2;">
+                <b>الموقع الجغرافي:</b> 
+                ${r.google_maps_link ? `<a href="${r.google_maps_link}" style="color:#005a8f; text-decoration:none;">${r.google_maps_link}</a>` : 'غير متوفر'}
+             </div>
+        </div>
+
+        ${detailedItemsHTML ? `
+            <h3 style="color:#005a8f; margin-top:25px; border-bottom:2px solid #eee; padding-bottom:5px;">📸 الملاحظات الميدانية والتوثيق</h3>
+            <div style="margin-top:15px;">
+                ${detailedItemsHTML}
+            </div>
+        ` : ''}
+
+        ${simpleItemsRows ? `
+            <div style="page-break-inside: avoid;">
+                <h3 style="background:#005a8f; color:white; padding:8px; border-radius:4px; margin-top:30px; font-size:14px;">✅ قائمة الفحص السريع</h3>
+                <table>
+                    <tbody>${simpleItemsRows}</tbody>
+                </table>
+            </div>
+        ` : ''}
+
+        <div class="footer">
+            <div style="text-align:center;">
+                <p style="margin-bottom:5px; font-weight:bold; color:#005a8f;">المفتش</p>
+                <p>${r.inspector}</p>
+            </div>
+            ${r.signature_image ? `
+            <div style="text-align:center;">
+                <p style="margin-bottom:5px; font-weight:bold; color:#005a8f;">توقيع المستلم</p>
+                <img src="${r.signature_image}" style="height:70px; border-bottom:1px solid #ccc;">
+            </div>` : ''}
+        </div>
+      </div>
+    `
+
+    container.innerHTML = content
+
+    // إعدادات التصدير لملف PDF
+    const opt = {
+      margin:       [10, 10, 10, 10],
+      filename:     `Report_${r.contractor}_${r.serial}.pdf`,
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { scale: 2, useCORS: true, scrollY: 0 },
+      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      pagebreak:    { mode: ['css', 'legacy'] }
+    };
+
+    html2pdf().set(opt).from(container).save()
+  }
 
   // --- Filtering ---
   const filteredReports = reports.filter(r => 
@@ -200,6 +436,7 @@ const AdminDashboard = () => {
     (r.contractor || "").toLowerCase().includes(searchTerm.toLowerCase())
   )
 
+  // --- Render ---
   return (
     <>
       <style>{styles}</style>
@@ -282,7 +519,9 @@ const AdminDashboard = () => {
                       <button className="btn-action-card btn-view" onClick={() => setExpandedReport(expandedReport === r.id ? null : r.id)}>
                         <i className={`fa-solid ${expandedReport === r.id ? 'fa-chevron-up' : 'fa-eye'}`}></i> التفاصيل
                       </button>
-                      <DownloadPDFButton reportData={r} fullQuestionsList={fullQuestionsList} />
+                      <button className="btn-action-card btn-pdf" onClick={() => generatePDF(r)}>
+                        <i className="fa-solid fa-file-pdf"></i> PDF
+                      </button>
                       <button className="btn-action-card btn-delete" onClick={() => deleteReport(r.id)}>
                         <i className="fa-solid fa-trash"></i>
                       </button>
