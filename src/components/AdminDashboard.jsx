@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import html2pdf from 'html2pdf.js'
 import { supabase } from '../supabaseClient'
-import { DownloadPDFButton } from './SafetyReportPDF'
+import { DownloadPDFButton } from './SafetyReportPDF.jsx'
 // --- قائمة الأسئلة الموحدة ---
 const fullQuestionsList = [
     "تصريح العمل الأساسي والثانوي متواجد بموقع العمل", 
