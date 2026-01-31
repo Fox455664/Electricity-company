@@ -188,266 +188,92 @@ const AdminDashboard = () => {
   // ==========================================================
   // === PDF GENERATION LOGIC (المعدل كلياً: صور كبيرة وواضحة) ===
   // ==========================================================
-  const generatePDF = (r) => {
-    if (!r) { alert("لا توجد بيانات"); return; }
+  // ==========================================================
+// === PDF GENERATION (ENTERPRISE / NO CUT / NO LOSS) =======
+// ==========================================================
+const generatePDF = async (r) => {
+  if (!r) return alert("لا توجد بيانات")
 
-    const container = document.createElement('div');
-    // العرض واسع لاستيعاب الصور بجودة عالية
-    container.style.width = '210mm'; 
-    
-    // تصميم مخصص للطباعة فقط
-    const pdfStyles = `
-      <style>
-        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap');
-        
-        .pdf-wrapper { 
-            font-family: 'Cairo', sans-serif !important; 
-            direction: rtl; 
-            background: #fff;
-            color: #000;
-            line-height: 1.4;
-            -webkit-print-color-adjust: exact !important; 
-        }
+  const container = document.createElement("div")
+  container.style.width = "210mm"
+  container.style.background = "#fff"
 
-        /* رأس الصفحة */
-        .pdf-header { 
-            text-align: center; 
-            border-bottom: 5px solid #1e3a8a; 
-            padding-bottom: 20px; 
-            margin-bottom: 30px; 
-        }
-        .pdf-h1 { color: #1e3a8a; font-size: 28px; font-weight: 900; margin: 0; }
-        .pdf-sub { color: #555; font-size: 16px; margin-top: 5px; font-weight: 700; }
+  const getColor = (v) =>
+    v === "نعم" ? "#15803d" : v === "لا" ? "#b91c1c" : "#475569"
 
-        /* صندوق المعلومات */
-        .pdf-info-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            background: #f1f5f9;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 40px;
-        }
-        .pdf-info-row { border-bottom: 1px solid #ddd; padding-bottom: 5px; }
-        .pdf-info-label { color: #1e3a8a; font-size: 12px; font-weight: bold; }
-        .pdf-info-val { color: #000; font-weight: 800; font-size: 14px; margin-top: 3px; }
-        .full-row { grid-column: span 2; }
+  const rows = fullQuestionsList.map((q, i) => {
+    const violation = r.violations?.find(v => v.q === q)
+    const raw = violation ? violation.ans : r.answers?.[i + 1]
+    const answer = raw?.val || raw || "لا ينطبق"
+    const note = violation?.note || ""
+    const photos = violation?.photos || (violation?.photo ? [violation.photo] : [])
 
-        /* كارت الملاحظة - أهم جزء */
-        .pdf-card {
-            background: #fff;
-            border: 2px solid #e2e8f0;
-            border-radius: 12px;
-            padding: 25px;
-            margin-bottom: 40px; /* مسافة كبيرة بين الكروت */
-            box-shadow: none;
-            
-            /* هذا السطر يمنع انقسام الكارت بين صفحتين */
-            page-break-inside: avoid !important;
-            break-inside: avoid !important;
-        }
+    return { i: i + 1, q, answer, note, photos }
+  })
 
-        .pdf-card-title {
-            display: flex; justify-content: space-between; align-items: center;
-            border-bottom: 2px solid #eee; padding-bottom: 15px; margin-bottom: 15px;
-        }
-        .pdf-q-text { font-weight: 900; font-size: 16px; color: #000; }
-        
-        .pdf-ans-badge {
-            padding: 8px 20px; border-radius: 6px; font-size: 14px; font-weight: bold; color: #fff; border: 1px solid #000;
-        }
+  container.innerHTML = `
+  <style>
+    body{font-family:Cairo;direction:rtl}
+    img{width:100%;height:auto;object-fit:contain}
+    .card{border:2px solid #e5e7eb;border-radius:12px;padding:20px;margin-bottom:30px;page-break-inside:avoid}
+    .photos{display:grid;grid-template-columns:1fr 1fr;gap:15px}
+    table{width:100%;border-collapse:collapse;margin-top:40px}
+    th,td{border:1px solid #000;padding:8px;font-size:13px}
+    th{background:#1e3a8a;color:#fff}
+  </style>
 
-        .pdf-note {
-            background: #fffbe6; color: #b45309; border: 1px solid #fde68a;
-            padding: 15px; margin-bottom: 20px; border-radius: 8px; font-size: 14px; font-weight: bold;
-        }
+  <h1 style="text-align:center;color:#1e3a8a">
+    تقرير السلامة والصحة المهنية
+  </h1>
 
-        /* تنسيق الصور الكبير */
-        .pdf-photos-container {
-            display: grid;
-            /* صورتين فقط في الصف عشان يكونوا كبار */
-            grid-template-columns: 1fr 1fr; 
-            gap: 20px;
-            margin-top: 15px;
-        }
-        .pdf-img-box {
-            border: 1px solid #ccc;
-            padding: 5px;
-            border-radius: 8px;
-            background: #fff;
-            text-align: center;
-        }
-        .pdf-img {
-            width: 100%;
-            height: auto !important; /* السماح للصورة تأخذ راحتها في الطول */
-            max-height: 500px; /* سقف للطول عشان الصفحة */
-            object-fit: contain; /* تظهر الصورة كاملة */
-            display: block;
-        }
+  ${rows.map(rw => `
+    <div class="card">
+      <b>#${rw.i} - ${rw.q}</b>
+      <div style="font-weight:bold;color:${getColor(rw.answer)}">${rw.answer}</div>
+      ${rw.note ? `<div>📝 ${rw.note}</div>` : ""}
+      ${rw.photos.length ? `
+        <div class="photos">
+          ${rw.photos.map(p => `<img src="${p}" crossorigin="anonymous" />`).join("")}
+        </div>` : ""}
+    </div>
+  `).join("")}
 
-        /* الجدول */
-        .pdf-checklist-section { margin-top: 60px; page-break-before: always; }
-        .pdf-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        .pdf-table th { background: #1e3a8a; color: white; padding: 12px; text-align: right; font-weight: bold; border: 1px solid #000; }
-        .pdf-table td { border: 1px solid #ccc; padding: 10px; font-weight: 600; }
-        .pdf-table tr { page-break-inside: avoid; }
-        thead { display: table-header-group; }
+  <table>
+    <thead>
+      <tr><th>#</th><th>البند</th><th>الحالة</th></tr>
+    </thead>
+    <tbody>
+      ${rows.map(rw => `
+        <tr>
+          <td>${rw.i}</td>
+          <td>${rw.q}</td>
+          <td style="color:${getColor(rw.answer)}">${rw.answer}</td>
+        </tr>
+      `).join("")}
+    </tbody>
+  </table>
+  `
 
-        /* الفوتر */
-        .pdf-footer { 
-            margin-top: 50px; border-top: 3px solid #000; padding-top: 20px;
-            display: flex; justify-content: space-between;
-            page-break-inside: avoid;
-        }
-        .pdf-sign-box { text-align: center; }
-        .pdf-sign-label { font-size: 14px; font-weight: bold; margin-bottom: 10px; color: #555; }
-        .pdf-sign-val { font-size: 16px; font-weight: 900; }
-      </style>
-    `;
-
-    const getStatusColor = (ans) => {
-        if(ans === 'نعم') return '#16a34a'; // أخضر
-        if(ans === 'لا') return '#dc2626'; // أحمر
-        return '#64748b'; // رمادي
-    };
-
-    // تجهيز الملاحظات والصور
-    let observationsHTML = '';
-    let hasObservations = false;
-
-    fullQuestionsList.forEach((q, i) => {
-        const violationData = r.violations?.find(v => v.q === q);
-        const normalAns = r.answers && r.answers[i+1];
-        let finalAns = violationData ? violationData.ans : (normalAns ? (normalAns.val || normalAns) : "لا ينطبق");
-        if (finalAns === 'N/A') finalAns = 'لا ينطبق';
-
-        const hasPhotos = violationData && (violationData.photos?.length > 0 || violationData.photo);
-        const hasNote = violationData && violationData.note;
-        const isDanger = finalAns === 'لا';
-
-        if (hasPhotos || hasNote || isDanger) {
-            hasObservations = true;
-            let photosHTML = '';
-            let photosArr = [];
-            if (violationData?.photos && Array.isArray(violationData.photos)) photosArr = violationData.photos;
-            else if (violationData?.photo) photosArr = [violationData.photo];
-
-            if (photosArr.length > 0) {
-                photosHTML = `<div class="pdf-photos-container">`;
-                photosArr.forEach(src => {
-                    photosHTML += `
-                        <div class="pdf-img-box">
-                            <img src="${src}" class="pdf-img" crossorigin="anonymous" />
-                        </div>`;
-                });
-                photosHTML += `</div>`;
-            }
-
-            observationsHTML += `
-                <div class="pdf-card">
-                    <div class="pdf-card-title">
-                        <div class="pdf-q-text">#${i+1} : ${q}</div>
-                        <div class="pdf-ans-badge" style="background:${getStatusColor(finalAns)}">${finalAns}</div>
-                    </div>
-                    ${hasNote ? `<div class="pdf-note"><strong>📝 ملاحظة:</strong> ${violationData.note}</div>` : ''}
-                    ${photosHTML}
-                </div>
-            `;
-        }
-    });
-
-    // تجهيز الجدول
-    let fullListRows = '';
-    fullQuestionsList.forEach((q, i) => {
-        const violationData = r.violations?.find(v => v.q === q);
-        const normalAns = r.answers && r.answers[i+1];
-        let finalAns = violationData ? violationData.ans : (normalAns ? (normalAns.val || normalAns) : "لا ينطبق");
-        if (finalAns === 'N/A') finalAns = 'لا ينطبق';
-        
-        fullListRows += `
-            <tr>
-                <td style="text-align:center;">${i+1}</td>
-                <td>${q}</td>
-                <td style="text-align:center; color:${getStatusColor(finalAns)}">${finalAns}</td>
-            </tr>
-        `;
-    });
-
-    // بناء الصفحة
-    const content = `
-      ${pdfStyles}
-      <div class="pdf-wrapper" style="padding: 20px;">
-        
-        <div class="pdf-header">
-            <h1 class="pdf-h1">مجموعة السلامة إدارة ضواحي الرياض</h1>
-            <div class="pdf-sub">تقرير الفحص الدوري للسلامة والصحة المهنية</div>
-        </div>
-        
-        <div class="pdf-info-grid">
-             <div class="pdf-info-row"><div class="pdf-info-label">الموقع</div><div class="pdf-info-val">${r.location || '-'}</div></div>
-             <div class="pdf-info-row"><div class="pdf-info-label">التاريخ</div><div class="pdf-info-val">${r.timestamp || new Date().toLocaleDateString('ar-EG')}</div></div>
-             <div class="pdf-info-row"><div class="pdf-info-label">المقاول</div><div class="pdf-info-val">${r.contractor || '-'}</div></div>
-             <div class="pdf-info-row"><div class="pdf-info-label">رقم المقايسة</div><div class="pdf-info-val">${r.work_order_number || r.serial || '-'}</div></div>
-             <div class="pdf-info-row full-row"><div class="pdf-info-label">وصف العمل</div><div class="pdf-info-val">${r.work_desc || '-'}</div></div>
-             <div class="pdf-info-row"><div class="pdf-info-label">الاستشاري</div><div class="pdf-info-val">${r.consultant || '-'}</div></div>
-             <div class="pdf-info-row"><div class="pdf-info-label">فريق الزيارة</div><div class="pdf-info-val">${r.visit_team || '-'}</div></div>
-             <div class="pdf-info-row"><div class="pdf-info-label">المستلم</div><div class="pdf-info-val">${r.receiver || '-'}</div></div>
-             <div class="pdf-info-row"><div class="pdf-info-label">المفتش</div><div class="pdf-info-val">${r.inspector || '-'}</div></div>
-             <div class="pdf-info-row full-row" style="border:none;">
-                <div class="pdf-info-label">الموقع الجغرافي</div>
-                ${r.google_maps_link ? `<a href="${r.google_maps_link}" style="color:#005a8f; font-weight:bold; text-decoration:none;">📍 اضغط لعرض الموقع على الخريطة</a>` : '-'}
-             </div>
-        </div>
-
-        ${hasObservations ? `
-            <h2 style="color:#b91c1c; border-bottom:2px solid #fee2e2; padding-bottom:10px; margin-top:40px;">
-                📷 التوثيق الفوتوغرافي والمخالفات
-            </h2>
-            ${observationsHTML}
-        ` : `
-            <div style="text-align:center; padding:40px; border:3px dashed #16a34a; background:#f0fdf4; border-radius:15px; margin:40px 0;">
-                <h1 style="color:#16a34a; margin:0;">✅ الموقع سليم 100%</h1>
-                <p style="font-size:18px; margin-top:10px;">لم يتم رصد أي ملاحظات أو مخالفات</p>
-            </div>
-        `}
-
-        <div class="pdf-checklist-section">
-            <h3 style="background:#1e3a8a; color:white; padding:15px; margin:0; text-align:center;">📋 قائمة الفحص الكاملة</h3>
-            <table class="pdf-table">
-                <thead><tr><th style="width:50px">#</th><th>البند</th><th style="width:100px">الحالة</th></tr></thead>
-                <tbody>${fullListRows}</tbody>
-            </table>
-        </div>
-
-        <div class="pdf-footer">
-            <div class="pdf-sign-box">
-                <div class="pdf-sign-label">توقيع المفتش</div>
-                <div class="pdf-sign-val">${r.inspector}</div>
-            </div>
-            <div class="pdf-sign-box">
-                <div class="pdf-sign-label">توقيع المستلم (${r.receiver || 'المسؤول'})</div>
-                ${r.signature_image ? `<img src="${r.signature_image}" style="height:80px; margin-top:5px; border-bottom:1px solid #000;" />` : '<div style="margin-top:40px;">....................</div>'}
-            </div>
-        </div>
-
-      </div>
-    `;
-
-    container.innerHTML = content;
-
-    const opt = {
-      margin:       [10, 10, 10, 10], // هوامش صغيرة لاستغلال الصفحة
-      filename:     `Report_${r.serial}.pdf`,
-      image:        { type: 'jpeg', quality: 0.98 },
-      html2canvas:  { scale: 2, useCORS: true, scrollY: 0 },
-      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
-      pagebreak:    { mode: ['css', 'legacy'], avoid: ['.pdf-card', 'tr', '.pdf-info-row', '.pdf-header'] }
-    };
-
-    html2pdf().set(opt).from(container).save();
-  }
+  html2pdf().set({
+    margin: 10,
+    filename: `Report_${r.serial}.pdf`,
+    image: { type: "jpeg", quality: 1 },
+    html2canvas: {
+      scale: 3,
+      useCORS: true,
+      scrollY: 0
+    },
+    jsPDF: {
+      unit: "mm",
+      format: "a4",
+      orientation: "portrait"
+    },
+    pagebreak: {
+      mode: ["css"],
+      avoid: ["img", ".card", "tr"]
+    }
+  }).from(container).save()
+}
 
   // --- Filtering ---
   const filteredReports = reports.filter(r => 
