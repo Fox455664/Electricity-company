@@ -223,146 +223,135 @@ const AdminDashboard = () => {
   }
 
   // --- PDF Generation Logic (تعديل: منع التقطيع وتلوين البنود) ---
-  // --- PDF Generation Logic (Professional & Smart Page Breaks) ---
+  // --- PDF Generation Logic (صور كاملة + بيانات شاملة) ---
 const generatePDF = (r) => {
-    // 1. التأكد من وجود البيانات والقائمة
-    if (!r || !fullQuestionsList) {
-        alert("بيانات التقرير غير مكتملة");
-        return;
-    }
+    // التأكد من وجود البيانات
+    if (!r) { alert("لا توجد بيانات للتقرير"); return; }
 
-    // 2. إنشاء الحاوية (Hidden Container)
+    // 1. إنشاء الحاوية
     const container = document.createElement('div');
-    // نجعل الحاوية بعرض ثابت يحاكي A4 لضمان تطابق التصميم
-    container.style.width = '210mm'; 
+    container.style.width = '210mm'; // عرض A4 ثابت
     
-    // 3. تصميم CSS (محسن للطباعة وعدم التقطيع)
+    // 2. تصميم CSS (محسن للصور الكاملة)
     const pdfStyles = `
       <style>
         @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap');
         
-        body, html { 
+        body { 
             font-family: 'Cairo', sans-serif; 
             direction: rtl; 
             margin: 0; padding: 0;
-            -webkit-print-color-adjust: exact !important; 
-            print-color-adjust: exact !important;
+            background: #fff;
+            color: #333;
         }
 
-        /* تنسيق الهيدر */
+        /* تنسيق الرأس */
         .header-section { 
             text-align: center; 
-            border-bottom: 3px solid #f28b00; 
-            padding-bottom: 10px; 
-            margin-bottom: 20px; 
+            border-bottom: 4px solid #1e3a8a; /* أزرق غامق */
+            padding-bottom: 15px; 
+            margin-bottom: 25px; 
         }
-        .header-title { color: #0f172a; font-size: 24px; font-weight: 800; margin: 0; }
-        .header-sub { color: #005a8f; font-size: 14px; margin-top: 5px; font-weight: 700; letter-spacing: 1px; }
+        .header-title { color: #1e3a8a; font-size: 26px; font-weight: 800; margin: 0; }
+        .header-sub { color: #64748b; font-size: 14px; margin-top: 5px; font-weight: 700; }
 
-        /* شبكة المعلومات */
-        .info-grid { 
-            display: grid; 
-            grid-template-columns: repeat(2, 1fr); 
-            gap: 12px; 
-            background: #f8fafc; 
-            padding: 15px; 
-            border: 1px solid #cbd5e1; 
-            border-radius: 8px; 
-            margin-bottom: 25px;
-            font-size: 12px;
-        }
-        .info-cell { border-bottom: 1px dashed #e2e8f0; padding-bottom: 4px; }
-        .info-label { color: #64748b; font-size: 10px; font-weight: bold; display: block; }
-        .info-val { color: #334155; font-weight: 700; font-size: 12px; margin-top: 2px; }
-
-        /* كروت الملاحظات - مصممة لعدم التقطيع */
-        .observation-card {
-            background: #fff;
+        /* جدول المعلومات الأساسية */
+        .info-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 30px;
             border: 1px solid #e2e8f0;
             border-radius: 8px;
-            padding: 12px;
-            margin-bottom: 15px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.03);
-            
-            /* خصائص منع التقطيع */
-            page-break-inside: avoid !important;
-            break-inside: avoid !important;
+            padding: 15px;
+            background-color: #f8fafc;
         }
-
-        .q-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
-        .q-title { font-weight: 700; font-size: 13px; color: #1e293b; max-width: 80%; }
         
-        .q-note { 
-            font-size: 11px; 
-            background: #fffbe6; /* لون أصفر فاتح للملاحظة */
-            color: #b45309; 
-            padding: 8px; 
-            border-radius: 6px; 
-            border: 1px solid #fde68a; 
-            margin-top: 8px; 
+        .info-box {
+            width: 48%; /* عنصرين في كل صف */
+            margin-bottom: 8px;
+            border-bottom: 1px dashed #cbd5e1;
+            padding-bottom: 5px;
+        }
+        .info-box.full-width { width: 100%; } /* الوصف يأخذ عرض كامل */
+
+        .label { color: #1e3a8a; font-size: 11px; font-weight: bold; display: block; margin-bottom: 2px;}
+        .value { color: #000; font-weight: 700; font-size: 13px; line-height: 1.5; }
+
+        /* كارت الملاحظة/المخالفة */
+        .observation-card {
+            background: #fff;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px; /* مسافة كبيرة بين الكروت */
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            page-break-inside: avoid !important; /* ممنوع التقطيع في منتصف الكارت */
         }
 
-        /* الصور */
-        .photos-container { display: flex; gap: 8px; margin-top: 8px; overflow: hidden; }
-        .evidence-img { 
-            width: 140px; height: 100px; object-fit: cover; 
-            border-radius: 6px; border: 1px solid #cbd5e1; 
-            background-color: #f1f5f9;
+        .card-header {
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; margin-bottom: 15px;
+        }
+        .q-text { font-weight: 800; font-size: 15px; color: #1e293b; }
+        
+        .status-badge {
+            padding: 6px 15px; border-radius: 20px; font-size: 12px; font-weight: bold; color: #fff;
+        }
+
+        .note-box {
+            background: #fff7ed; border-right: 4px solid #f97316;
+            padding: 10px; margin-bottom: 15px; border-radius: 4px; font-size: 12px;
+        }
+
+        /* تنسيق الصور الجديد - يحل مشكلة القص */
+        .photos-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr; /* صورتين بجانب بعض */
+            gap: 15px;
+            margin-top: 10px;
+        }
+        .photo-wrapper {
+            text-align: center;
+            border: 1px solid #e2e8f0;
+            padding: 5px;
+            border-radius: 8px;
+            background: #fff;
+        }
+        .evidence-img {
+            width: 100%;
+            height: auto !important; /* مهم جداً: الطول يتغير حسب الصورة */
+            max-height: 400px; /* أقصى طول حتى لا تأكل الصفحة */
+            object-fit: contain; /* تظهر الصورة كاملة بدون قص */
+            border-radius: 6px;
         }
 
         /* جدول القائمة الكاملة */
-        .checklist-section { margin-top: 30px; }
-        .checklist-table { 
-            width: 100%; border-collapse: collapse; 
-            font-size: 11px; border: 1px solid #e2e8f0;
-        }
-        
-        /* تكرار رأس الجدول في الصفحة الجديدة */
-        thead { display: table-header-group; } 
-        
-        .checklist-table th { 
-            background: #005a8f; color: white; padding: 10px; 
-            text-align: right; border: 1px solid #004269;
-        }
-        .checklist-table td { 
-            border: 1px solid #e2e8f0; padding: 6px 10px; vertical-align: middle; 
-        }
-        /* منع تقطيع الصفوف */
-        .checklist-table tr { 
-            page-break-inside: avoid !important; 
-            break-inside: avoid !important; 
-        }
-        .checklist-table tr:nth-child(even) { background-color: #f8fafc; }
-
-        /* الشارات Status Badges */
-        .status-badge { 
-            display: inline-block; padding: 4px 8px; border-radius: 4px; 
-            font-size: 10px; font-weight: 800; min-width: 50px; text-align: center;
-        }
+        .checklist-section { margin-top: 50px; page-break-before: always; }
+        .checklist-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        .checklist-table th { background: #1e3a8a; color: white; padding: 10px; text-align: right; }
+        .checklist-table td { border-bottom: 1px solid #e2e8f0; padding: 8px; }
+        .checklist-table tr { page-break-inside: avoid; }
 
         /* الفوتر */
         .footer { 
-            margin-top: 30px; 
-            padding-top: 20px; 
-            border-top: 2px solid #e2e8f0; 
-            display: flex; 
-            justify-content: space-between;
-            page-break-inside: avoid;
+            margin-top: 40px; border-top: 2px solid #333; padding-top: 20px;
+            display: flex; justify-content: space-between;
         }
       </style>
     `;
 
-    // --- 4. معالجة البيانات وبناء HTML --- //
+    // --- 3. بناء المحتوى --- //
+
+    // دالة مساعدة للألوان
+    const getStatusColor = (ans) => {
+        if(ans === 'نعم') return '#16a34a'; // أخضر
+        if(ans === 'لا') return '#dc2626'; // أحمر
+        return '#64748b'; // رمادي
+    };
 
     let observationsHTML = '';
     let hasObservations = false;
-
-    // دالة الألوان
-    const getStatusStyle = (ans) => {
-        if (ans === 'نعم') return 'background: #dcfce7; color: #15803d; border: 1px solid #86efac;';
-        if (ans === 'لا') return 'background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5;';
-        return 'background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1;';
-    };
 
     fullQuestionsList.forEach((q, i) => {
         const violationData = r.violations?.find(v => v.q === q);
@@ -374,54 +363,61 @@ const generatePDF = (r) => {
         const hasNote = violationData && violationData.note;
         const isDanger = finalAns === 'لا';
 
-        // عرض الملاحظات فقط للعناصر التي بها (صور، ملاحظة نصية، أو حالة خطر/لا)
+        // عرض فقط العناصر التي بها صور أو ملاحظات أو مخالفات
         if (hasPhotos || hasNote || isDanger) {
             hasObservations = true;
-            let photosHTML = '';
             
-            // معالجة الصور (سواء كانت مصفوفة أو نص مفرد)
+            // معالجة الصور
+            let photosHTML = '';
             let photosArr = [];
             if (violationData?.photos && Array.isArray(violationData.photos)) photosArr = violationData.photos;
             else if (violationData?.photo) photosArr = [violationData.photo];
 
             if (photosArr.length > 0) {
-                photosHTML = `<div class="photos-container">`;
+                photosHTML = `<div class="photos-grid">`;
                 photosArr.forEach(src => {
-                    // إضافة crossOrigin لتفادي مشاكل الصور الخارجية
-                    photosHTML += `<img src="${src}" class="evidence-img" crossorigin="anonymous" />`;
+                    photosHTML += `
+                        <div class="photo-wrapper">
+                            <img src="${src}" class="evidence-img" crossorigin="anonymous" />
+                        </div>`;
                 });
                 photosHTML += `</div>`;
             }
 
-            let borderSide = isDanger ? '6px solid #ef4444' : (finalAns === 'نعم' ? '6px solid #22c55e' : '6px solid #94a3b8');
-
             observationsHTML += `
-                <div class="observation-card" style="border-right: ${borderSide};">
-                    <div class="q-header">
-                        <div class="q-title">#${i+1} - ${q}</div>
-                        <span class="status-badge" style="${getStatusStyle(finalAns)}">${finalAns}</span>
+                <div class="observation-card">
+                    <div class="card-header">
+                        <div class="q-text">#${i+1} : ${q}</div>
+                        <span class="status-badge" style="background:${getStatusColor(finalAns)}">
+                            ${finalAns}
+                        </span>
                     </div>
-                    ${hasNote ? `<div class="q-note"><strong>📝 ملاحظة:</strong> ${violationData.note}</div>` : ''}
+                    
+                    ${hasNote ? `
+                        <div class="note-box">
+                            <strong>📝 ملاحظة:</strong> ${violationData.note}
+                        </div>
+                    ` : ''}
+
                     ${photosHTML}
                 </div>
             `;
         }
     });
 
-    // بناء صفوف الجدول الكامل
+    // بناء جدول القائمة الكاملة
     let fullListRows = '';
     fullQuestionsList.forEach((q, i) => {
         const violationData = r.violations?.find(v => v.q === q);
         const normalAns = r.answers && r.answers[i+1];
         let finalAns = violationData ? violationData.ans : (normalAns ? (normalAns.val || normalAns) : "لا ينطبق");
-        if (finalAns === 'N/A') finalAns = 'لا ينطبق';
-
+        
         fullListRows += `
             <tr>
-                <td style="text-align:center; font-weight:bold; width: 40px;">${i+1}</td>
+                <td style="font-weight:bold; width:30px;">${i+1}</td>
                 <td>${q}</td>
-                <td style="text-align:center; width: 90px;">
-                    <span class="status-badge" style="${getStatusStyle(finalAns)}">${finalAns}</span>
+                <td style="width:80px; text-align:center; font-weight:bold; color:${getStatusColor(finalAns)}">
+                    ${finalAns}
                 </td>
             </tr>
         `;
@@ -431,101 +427,85 @@ const generatePDF = (r) => {
       ${pdfStyles}
       <div style="padding: 20px;">
         
-        <!-- Header -->
+        <!-- الهيدر -->
         <div class="header-section">
             <h1 class="header-title">مجموعة السلامة إدارة ضواحي الرياض</h1>
-            <div class="header-sub">International Safety Inspection Report</div>
+            <div class="header-sub">تقرير الفحص الدوري للسلامة والصحة المهنية</div>
         </div>
         
-        <!-- Info Grid -->
-        <div class="info-grid">
-             <div class="info-cell"><span class="info-label">المقاول (Contractor)</span><span class="info-val">${r.contractor || '-'}</span></div>
-             <div class="info-cell"><span class="info-label">رقم الأمر / التسلسل</span><span class="info-val">${r.work_order_number || r.serial || '-'}</span></div>
-             <div class="info-cell" style="grid-column: span 2;"><span class="info-label">وصف العمل (Description)</span><span class="info-val">${r.work_desc || '-'}</span></div>
-             <div class="info-cell"><span class="info-label">الموقع (Location)</span><span class="info-val">${r.location || '-'}</span></div>
-             <div class="info-cell"><span class="info-label">التاريخ (Date)</span><span class="info-val">${r.timestamp || new Date().toLocaleDateString('ar-EG')}</span></div>
-             <div class="info-cell"><span class="info-label">المفتش (Inspector)</span><span class="info-val">${r.inspector || '-'}</span></div>
-             <div class="info-cell"><span class="info-label">رابط GPS</span>${r.google_maps_link ? `<a href="${r.google_maps_link}" style="font-size:10px;">الموقع على الخريطة</a>` : '-'}</div>
+        <!-- بيانات التقرير (تم إضافة كل الحقول من الصورة) -->
+        <div class="info-container">
+             <div class="info-box"><span class="label">الموقع (Location)</span><span class="value">${r.location || '-'}</span></div>
+             <div class="info-box"><span class="label">التاريخ (Date)</span><span class="value">${r.timestamp || new Date().toLocaleDateString('ar-EG')}</span></div>
+             
+             <div class="info-box"><span class="label">المقاول (Contractor)</span><span class="value">${r.contractor || '-'}</span></div>
+             <div class="info-box"><span class="label">رقم المقايسة / أمر العمل</span><span class="value">${r.work_order_number || r.serial || '-'}</span></div>
+             
+             <div class="info-box full-width"><span class="label">وصف العمل (Description)</span><span class="value">${r.work_desc || '-'}</span></div>
+             
+             <div class="info-box"><span class="label">الاستشاري</span><span class="value">${r.consultant || '-'}</span></div>
+             <div class="info-box"><span class="label">فريق الزيارة</span><span class="value">${r.visit_team || '-'}</span></div>
+             
+             <div class="info-box"><span class="label">المستلم (Receiver)</span><span class="value">${r.receiver || '-'}</span></div>
+             <div class="info-box"><span class="label">المفتش (Inspector)</span><span class="value">${r.inspector || '-'}</span></div>
         </div>
 
-        <!-- Observations Section -->
+        <!-- قسم الصور والملاحظات -->
         ${hasObservations ? `
-            <div style="margin-bottom: 30px;">
-                <h3 style="color:#b91c1c; border-bottom:1px solid #fee2e2; padding-bottom:5px; margin-bottom:15px; font-size:16px;">
-                    📸 الملاحظات والتوثيق (Observations)
-                </h3>
-                ${observationsHTML}
-            </div>
+            <h3 style="color:#1e3a8a; border-bottom:2px solid #bfdbfe; padding-bottom:10px; margin-top:40px;">
+                📷 التوثيق الفوتوغرافي والملاحظات
+            </h3>
+            ${observationsHTML}
         ` : `
-            <div style="text-align:center; padding:20px; background:#f0fdf4; border:1px dashed #4ade80; border-radius:8px; margin: 20px 0;">
-                <h3 style="margin:0; color:#166534;">✅ تقرير نظيف (Clean Report)</h3>
-                <p style="margin:5px 0 0 0; font-size:12px; color:#15803d;">لا توجد مخالفات مرصودة</p>
+            <div style="text-align:center; padding:30px; border:2px dashed #16a34a; background:#f0fdf4; border-radius:10px;">
+                <h2 style="color:#16a34a;">✅ الموقع نظيف</h2>
+                <p>لا توجد أي مخالفات أو ملاحظات تم رصدها</p>
             </div>
         `}
 
-        <!-- Full Checklist Section -->
+        <!-- الجدول الكامل -->
         <div class="checklist-section">
-            <h3 style="background:#0f172a; color:white; padding:8px 12px; border-radius:6px 6px 0 0; margin-bottom:0; font-size:14px;">
-                📋 قائمة الفحص الشاملة (Full Checklist)
+            <h3 style="background:#1e3a8a; color:white; padding:10px; margin:0; border-radius: 5px 5px 0 0;">
+                📋 قائمة الفحص الكاملة (Checklist)
             </h3>
             <table class="checklist-table">
                 <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>البند (Item)</th>
-                        <th>الحالة (Status)</th>
-                    </tr>
+                    <tr><th>#</th><th>البند</th><th>الحالة</th></tr>
                 </thead>
-                <tbody>
-                    ${fullListRows}
-                </tbody>
+                <tbody>${fullListRows}</tbody>
             </table>
         </div>
 
-        <!-- Footer -->
+        <!-- التوقيعات -->
         <div class="footer">
             <div style="text-align: center;">
-                <div style="font-size:11px; color:#64748b; margin-bottom:5px;">المفتش (Inspector)</div>
-                <div style="font-weight:bold; font-size:13px;">${r.inspector}</div>
+                <div class="label">توقيع المفتش</div>
+                <div class="value">${r.inspector}</div>
             </div>
-            ${r.signature_image ? `
+            
             <div style="text-align: center;">
-                <div style="font-size:11px; color:#64748b; margin-bottom:5px;">المستلم (Receiver)</div>
-                <img src="${r.signature_image}" style="height:50px; border-bottom:1px solid #ccc;">
-            </div>` : ''}
+                <div class="label">توقيع المستلم (${r.receiver || 'المسؤول'})</div>
+                ${r.signature_image ? `<img src="${r.signature_image}" style="height:60px; margin-top:5px;" />` : '<div style="margin-top:20px;">....................</div>'}
+            </div>
         </div>
+
       </div>
     `;
 
     container.innerHTML = content;
 
-    // --- 5. إعدادات التصدير (الحل الجذري للتقطيع) --- //
+    // إعدادات الطباعة للحفاظ على الجودة وعدم القص
     const opt = {
-      margin:       [10, 10, 10, 10], // هوامش (أعلى، يسار، أسفل، يمين)
-      filename:     `Safety_Report_${r.serial || Date.now()}.pdf`,
-      image:        { type: 'jpeg', quality: 0.98 }, 
-      html2canvas:  { 
-          scale: 2, // دقة عالية
-          useCORS: true, // للسماح بتحميل الصور الخارجية
-          scrollY: 0,
-          logging: false
-      },
+      margin:       [10, 10, 10, 10],
+      filename:     `Report_${r.contractor || 'Safety'}.pdf`,
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { scale: 2, useCORS: true, scrollY: 0 },
       jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
-      // أهم جزء: منع التقطيع داخل العناصر المهمة
-      pagebreak:    { 
-          mode: ['css', 'legacy'], 
-          avoid: ['.observation-card', 'tr', '.info-grid', '.header-section'] 
-      }
+      pagebreak:    { mode: ['css', 'legacy'], avoid: ['.observation-card', 'tr', '.info-box'] }
     };
 
-    // التنفيذ
-    // ملاحظة: html2pdf يعمل بشكل أفضل عندما يكون العنصر جزء من DOM أحياناً لتحميل الصور
-    // لكنه يعمل أيضاً مع container في الذاكرة. إذا لم تظهر الصور، جرب إضافة container للـ body وإخفاءه.
-    html2pdf().set(opt).from(container).save().then(() => {
-        // تنظيف (اختياري)
-        // container.remove(); 
-    });
-};
+    html2pdf().set(opt).from(container).save();
+}
 
   // --- Filtering ---
   const filteredReports = reports.filter(r => 
