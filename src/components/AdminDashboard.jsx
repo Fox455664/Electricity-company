@@ -223,7 +223,6 @@ const AdminDashboard = () => {
   }
 
   // --- PDF Generation Logic (تعديل: منع التقطيع وتلوين البنود) ---
-  // --- PDF Generation Logic (ملونة + فخمة + بدون تقطيع) ---
   // --- PDF Generation Logic (Professional & Smart Page Breaks) ---
 const generatePDF = (r) => {
     // 1. التأكد من وجود البيانات والقائمة
@@ -526,10 +525,7 @@ const generatePDF = (r) => {
         // تنظيف (اختياري)
         // container.remove(); 
     });
- };
-
-  
-  }
+};
 
   // --- Filtering ---
   const filteredReports = reports.filter(r => 
