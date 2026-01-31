@@ -3,281 +3,393 @@ import { useNavigate } from 'react-router-dom'
 import SignatureCanvas from 'react-signature-canvas'
 import { supabase } from '../supabaseClient'
 
-// القائمة الكاملة والنهائية المكونة من 41 بنداً
+// القائمة الموحدة
 const qList = [
-    "1. تصريح العمل الأساسي والثانوي متواجد بموقع العمل", 
-    "2. اجتماع ما قبل البدء بالعمل متواجد بموقع العمل", 
-    "3. نموذج فريق العمل متواجد بموقع العمل (مذكور رقم المقايسة - وصف العمل - رقم التصريح - توقيع مسئول شركة الكهرباء)", 
-    "4. إجراءات العمل الآمن وتقييم المخاطر وتوفرها بلغات مناسبة", 
-    "5. إلمام المستلم وفريق العمل بإجراءات العمل الآمن وتقييم المخاطر للمهمة", 
-    "6. ملاحظات", 
-    "7. بطاقة تعميد المصدر والمستلم والعامل المشارك سارية وبصلاحيات مناسبة للعمل", 
-    "8. تأهيل سائق المعدات (سائق ونش – سلة هوائية -........)", 
-    "9. المستلم متواجد بموقع العمل", 
-    "10. وضع أقفال السلامة و البطاقات التحذيرية و إكتمال بيانات التواصل", 
-    "11. التأكد من تركيب الأرضي المتنقل من الجهتين", 
-    "12. التأكد من فعالية جهاز كشف الجهد التستر", 
-    "13. نموذج فحص المركبة", 
-    "14. شهادة المسعف", 
-    "15. شهادة المكافح", 
-    "16. شهادة TUV السائق", 
-    "17. فحص TUV المعدات", 
-    "18. التأكد من مطابقة السلات للمواصفات ( كفرات – زيوت – كسور – حزام الأمان – تكدس مواد .. الخ)", 
-    "19. التأكد من سلامة خطاف الونش واحبال الرفع", 
-    "20. طفاية حريق سليمة ومفحوصة وسلامة استكر الفحص", 
-    "21. شنطة إسعافات مكتملة ومفحوصة", 
-    "22. التأكد من تركيب الأرضي للسيارات", 
-    "23. الحمل الأقصى محدد بوضوح على جميع معدات الرفع", 
-    "24. مهام الوقاية الشخصية سليمة (بسؤال الموظف والتفتيش علية) خوذة - ملابس – حذاء", 
-    "25. التفتيش على القفاز المطاطي (33000 – 13000 – 1000) ك.ف.أ", 
-    "26. الخوذة الكهربائية مزودة بحامى وجة", 
-    "27. أحزمة السلامة مرقمة وسليمة", 
-    "28. استخدام حواجز حماية سليمة وكافية و شريط تحذيري", 
-    "29. كفاية اللوحات الإرشادية المرورية", 
-    "30. الترميز بالألوان حسب الشهر للعدد والأدوات وأدوات السلامة", 
-    "31. تخزين أسطوانات الغاز وأسطوانات الاكسجين واللحام وترميزها", 
-    "32. وجود أغطية الحماية لأسطوانات الغاز والأكسجين", 
-    "33. ليات الاوكسي استيلين لا يوجد بها تشققات او تالفة", 
-    "34. سلامة المنظم والعدادات", 
-    "35. وجود شعار المقاول على المركبات والمعدات", 
-    "36. خطط متعلقة بتصاريح العمل", 
-    "37. خطة المنع من السقوط",
-    "38. خطة الإنقاذ في العمل على المرتفعات", 
-    "39. خطة رفع الأحمال الحرجة", 
-    "40. ملصقات العمل على مرتفعات اوملصق أغراض متساقطة",
-    "41. صور البطاقات"
+    "تصريح العمل الأساسي والثانوي متواجد بموقع العمل", 
+    "اجتماع ما قبل البدء بالعمل متواجد بموقع العمل", 
+    "نموذج فريق العمل متواجد بموقع العمل (مذكور رقم المقايسة - وصف العمل - رقم التصريح - توقيع مسئول شركة الكهرباء)", 
+    "إجراءات العمل الآمن وتقييم المخاطر وتوفرها بلغات مناسبة", 
+    "إلمام المستلم وفريق العمل بإجراءات العمل الآمن وتقييم المخاطر للمهمة", 
+    "ملاحظات", 
+    "بطاقة تعميد المصدر والمستلم والعامل المشارك سارية وبصلاحيات مناسبة للعمل", 
+    "تأهيل سائق المعدات (سائق ونش – سلة هوائية -........)", 
+    "المستلم متواجد بموقع العمل", 
+    "وضع أقفال السلامة و البطاقات التحذيرية و إكتمال بيانات التواصل", 
+    "التأكد من تركيب الأرضي المتنقل من الجهتين", 
+    "التأكد من فعالية جهاز كشف الجهد التستر", 
+    "نموذج فحص المركبة", 
+    "شهادة المسعف", 
+    "شهادة المكافح", 
+    "شهادة TUV السائق", 
+    "فحص TUV المعدات", 
+    "التأكد من مطابقة السلات للمواصفات ( كفرات – زيوت – كسور – حزام الأمان – تكدس مواد .. الخ)", 
+    "التأكد من سلامة خطاف الونش واحبال الرفع", 
+    "طفاية حريق سليمة ومفحوصة وسلامة استكر الفحص", 
+    "شنطة إسعافات مكتملة ومفحوصة", 
+    "التأكد من تركيب الأرضي للسيارات", 
+    "الحمل الأقصى محدد بوضوح على جميع معدات الرفع", 
+    "مهام الوقاية الشخصية سليمة (بسؤال الموظف والتفتيش علية) خوذة - ملابس – حذاء", 
+    "التفتيش على القفاز المطاطي (33000 – 13000 – 1000) ك.ف.أ", 
+    "الخوذة الكهربائية مزودة بحامى وجة", 
+    "أحزمة السلامة مرقمة وسليمة", 
+    "استخدام حواجز حماية سليمة وكافية و شريط تحذيري", 
+    "كفاية اللوحات الإرشادية المرورية", 
+    "الترميز بالألوان حسب الشهر للعدد والأدوات وأدوات السلامة", 
+    "تخزين أسطوانات الغاز وأسطوانات الاكسجين واللحام وترميزها", 
+    "وجود أغطية الحماية لأسطوانات الغاز والأكسجين", 
+    "ليات الاوكسي استيلين لا يوجد بها تشققات او تالفة", 
+    "سلامة المنظم والعدادات", 
+    "وجود شعار المقاول على المركبات والمعدات", 
+    "خطة المنع من السقوط",
+    "خطة الإنقاذ في العمل على المرتفعات", 
+    "خطة رفع الأحمال الحرجة", 
+    "ملصقات العمل على مرتفعات اوملصق أغراض متساقطة",
+    "صور البطاقات"
 ];
 
 const InspectorApp = () => {
   const navigate = useNavigate()
   const sigPad = useRef(null)
   const topRef = useRef(null)
+  const sigContainerRef = useRef(null) // مرجع لمكان التوقيع عشان السكرول
 
   // States
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(false)
   const [btnText, setBtnText] = useState('إعتماد وإرسال التقرير')
-  const [pledged, setPledged] = useState(false) // حالة التعهد (الصح)
-
+  
+  // Form Data
   const [formData, setFormData] = useState({
-    contractor: '', location: '', consultant: '', receiver: '',
-    work_desc: '', visit_team: '', order_number: '',
+    contractor: '',
+    location: '',
+    consultant: '',
+    receiver: '',
+    work_desc: '',
+    visit_team: '',
+    order_number: '',
     date: new Date().toISOString().split('T')[0]
   })
   
+  // Verification (GPS)
   const [geo, setGeo] = useState(null)
+
+  // Answers Store
   const [answers, setAnswers] = useState({})
 
-  // Styles
+  // --- Styles ---
   const styles = `
-    :root { --primary: #005a8f; --accent: #f28b00; --bg: #f8fafc; --danger: #ef4444; }
-    body { background: var(--bg); font-family: 'Cairo', sans-serif; direction: rtl; margin:0; }
-    .app-container { max-width: 800px; margin: 0 auto; padding-bottom: 120px; }
-    .header { background: linear-gradient(135deg, #005a8f, #004269); color: white; padding: 15px; display: flex; justify-content: space-between; position: sticky; top: 0; z-index: 1000; }
-    .card { background: white; border-radius: 16px; padding: 20px; margin: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
-    .section-title { font-weight: 700; color: var(--primary); margin-bottom: 15px; display: flex; align-items: center; gap: 8px; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px; }
-    .input-wrapper { margin-bottom: 12px; }
-    .input-label { display: block; font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 5px; }
-    .premium-input { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px; font-family: 'Cairo'; box-sizing: border-box; background: #f8fafc; font-size: 14px; }
-    
-    /* ستايل رسالة التعهد والتحذير */
-    .pledge-box { border: 2px solid var(--danger) !important; background: #fff1f2 !important; }
-    .pledge-text { color: #b91c1c; font-weight: 700; font-size: 14px; line-height: 1.6; text-align: justify; }
-    .checkbox-container { display: flex; align-items: center; gap: 12px; margin-top: 15px; background: white; padding: 12px; border-radius: 10px; cursor: pointer; border: 1px solid #fecaca; }
-    .pledge-check { width: 24px; height: 24px; cursor: pointer; accent-color: var(--danger); }
-
-    .q-card { background: white; border-radius: 12px; padding: 15px; margin: 15px; border-right: 5px solid transparent; transition: 0.3s; }
-    .q-card.answered { border-right-color: var(--primary); }
-    .opt-grid { display: flex; gap: 8px; margin-top: 12px; }
-    .opt-btn { flex: 1; padding: 10px; text-align: center; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; background: #f1f5f9; color: #64748b; }
-    .opt-btn.active.yes { background: #10b981; color: white; }
-    .opt-btn.active.no { background: #ef4444; color: white; }
-    .opt-btn.active.na { background: #64748b; color: white; }
-    
-    .footer { position: fixed; bottom: 0; left: 0; right: 0; background: white; padding: 15px; box-shadow: 0 -5px 20px rgba(0,0,0,0.1); z-index: 1000; text-align: center; }
-    .submit-btn { width: 100%; background: var(--accent); color: white; border: none; padding: 16px; border-radius: 50px; font-weight: 700; font-size: 16px; cursor: pointer; font-family: 'Cairo'; }
-    .submit-btn:disabled { background: #cbd5e1; cursor: not-allowed; opacity: 0.7; }
-    
-    .sig-canvas { width: 100% !important; height: 180px !important; background: #fafafa; border-radius: 10px; border: 1px solid #eee; }
-    .img-preview { width: 60px; height: 60px; object-fit: cover; border-radius: 8px; border: 1px solid #ddd; margin: 5px; }
+    :root {
+      --primary: #005a8f;
+      --accent: #f28b00;
+      --bg-color: #f8fafc;
+      --card-bg: #ffffff;
+      --text-main: #1e293b;
+      --text-light: #64748b;
+      --success: #10b981;
+      --danger: #ef4444;
+      --border-radius: 16px;
+    }
+    body { background-color: var(--bg-color); font-family: 'Cairo', sans-serif; margin: 0; padding: 0; }
+    .app-container { width: 100%; max-width: 900px; margin: 0 auto; padding-bottom: 120px; }
+    .premium-header { background: linear-gradient(135deg, #005a8f 0%, #004269 100%); color: white; padding: 20px; border-radius: 0 0 25px 25px; box-shadow: 0 10px 30px rgba(0, 90, 143, 0.15); position: sticky; top: 0; z-index: 1000; display: flex; justify-content: space-between; align-items: center; }
+    .inspector-badge { background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(5px); padding: 8px 16px; border-radius: 50px; font-size: 13px; display: flex; align-items: center; gap: 8px; }
+    .main-title { text-align: center; margin: 0 0 5px 0; color: #0f172a; font-size: 20px; font-weight: 800; }
+    .premium-card { background: var(--card-bg); border-radius: var(--border-radius); padding: 20px; margin: 15px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03); border: 1px solid #e2e8f0; }
+    .section-title { font-size: 18px; font-weight: 700; color: var(--primary); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; }
+    .verify-item { background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 12px; padding: 20px; text-align: center; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; }
+    .verify-item.done { border-style: solid; border-color: var(--success); background: #ecfdf5; }
+    .verify-icon { font-size: 30px; margin-bottom: 10px; color: var(--text-light); }
+    .verify-item.done .verify-icon { color: var(--success); }
+    .input-wrapper { margin-bottom: 15px; position: relative; }
+    .input-label { display: block; font-size: 13px; font-weight: 600; color: var(--text-light); margin-bottom: 6px; }
+    .premium-input { width: 100%; padding: 14px 16px; padding-right: 40px; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 15px; font-family: 'Cairo', sans-serif; background: #f8fafc; box-sizing: border-box; }
+    .input-icon { position: absolute; top: 38px; left: 15px; color: #94a3b8; }
+    .question-card { background: white; border-radius: 12px; padding: 20px; margin: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.02); border-right: 4px solid transparent; }
+    .question-card.answered { border-right-color: var(--primary); }
+    .q-text { font-weight: 700; color: var(--text-main); margin-bottom: 15px; line-height: 1.5; }
+    .options-container { display: flex; background: #f1f5f9; padding: 4px; border-radius: 10px; gap: 5px; }
+    .option-btn { flex: 1; padding: 10px; text-align: center; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; color: var(--text-light); }
+    .option-btn.yes.active { background: #10b981; color: white; }
+    .option-btn.no.active { background: #ef4444; color: white; }
+    .option-btn.na.active { background: #64748b; color: white; }
+    .actions-row { display: flex; gap: 10px; margin-top: 15px; }
+    .action-btn { flex: 1; border: 1px dashed #cbd5e1; padding: 10px; border-radius: 8px; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; background: #f8fafc; color: var(--text-main); }
+    .img-grid { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+    .img-thumb { width: 60px; height: 60px; border-radius: 8px; object-fit: cover; border: 2px solid #e2e8f0; position: relative; }
+    .del-btn { position: absolute; top: -5px; right: -5px; background: #ef4444; color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 12px; cursor: pointer; border: none; }
+    .note-input { width: 100%; margin-top: 10px; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; font-family: 'Cairo'; font-size: 13px; resize: none; box-sizing: border-box; }
+    .floating-footer { position: fixed; bottom: 20px; left: 20px; right: 20px; background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); padding: 15px; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); z-index: 100; display: flex; justify-content: center; }
+    .submit-main-btn { background: linear-gradient(135deg, var(--accent) 0%, #e67e00 100%); color: white; border: none; padding: 16px 40px; border-radius: 50px; font-weight: 700; font-size: 16px; width: 100%; box-shadow: 0 4px 15px rgba(242, 139, 0, 0.4); cursor: pointer; font-family: 'Cairo', sans-serif; }
+    .submit-main-btn:disabled { background: #cbd5e1; cursor: not-allowed; }
+    .sig-canvas { width: 100% !important; height: 200px !important; border-radius: 8px; }
   `;
 
+  // --- Auth Check ---
   useEffect(() => {
     const userData = sessionStorage.getItem('user')
-    if (!userData) navigate('/')
-    else setUser(JSON.parse(userData))
+    if (!userData) {
+      navigate('/')
+    } else {
+      setUser(JSON.parse(userData))
+    }
   }, [])
 
+  // --- Helpers ---
   const getGeo = () => {
-    navigator.geolocation.getCurrentPosition((pos) => {
-      setGeo(`https://maps.google.com/?q=${pos.coords.latitude},${pos.coords.longitude}`)
-    }, () => alert('يرجى تفعيل GPS للمتابعة'))
+    if (!navigator.geolocation) {
+      alert('المتصفح لا يدعم تحديد الموقع')
+      return
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const link = `https://maps.google.com/?q=${pos.coords.latitude},${pos.coords.longitude}`
+        setGeo(link)
+      },
+      () => alert('فشل تحديد الموقع. تأكد من تفعيل GPS')
+    )
   }
 
-  const handleAnswerChange = (qIdx, field, val) => {
-    setAnswers(prev => ({ ...prev, [qIdx]: { ...prev[qIdx], [field]: val } }))
-  }
-
-  const handleAddPhoto = (qIdx, files) => {
-    const fileArr = Array.from(files)
-    setAnswers(prev => ({ ...prev, [qIdx]: { ...prev[qIdx], files: [...(prev[qIdx]?.files || []), ...fileArr] } }))
-  }
-
+  // --- Image Compression ---
   const compressImage = (file) => {
-    return new Promise((res) => {
-      const reader = new FileReader(); reader.readAsDataURL(file)
+    return new Promise((resolve) => {
+      const reader = new FileReader()
+      reader.readAsDataURL(file)
       reader.onload = (e) => {
-        const img = new Image(); img.src = e.target.result
+        const img = new Image()
+        img.src = e.target.result
         img.onload = () => {
-          const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d')
-          const scale = 500 / img.width; canvas.width = 500; canvas.height = img.height * scale
-          ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
-          res(canvas.toDataURL('image/jpeg', 0.5))
+          const elem = document.createElement('canvas')
+          const MAX_WIDTH = 500
+          const scaleFactor = MAX_WIDTH / img.width
+          elem.width = MAX_WIDTH
+          elem.height = img.height * scaleFactor
+          const ctx = elem.getContext('2d')
+          ctx.drawImage(img, 0, 0, elem.width, elem.height)
+          resolve(elem.toDataURL('image/jpeg', 0.5))
         }
       }
     })
   }
 
+  const handleAnswerChange = (qIndex, field, value) => {
+    setAnswers(prev => ({
+      ...prev,
+      [qIndex]: { ...prev[qIndex], [field]: value }
+    }))
+  }
+
+  const handleAddPhoto = (qIndex, newFiles) => {
+      if (!newFiles || newFiles.length === 0) return;
+      const fileArray = Array.from(newFiles);
+      setAnswers(prev => {
+          const existingFiles = prev[qIndex]?.files || [];
+          return {
+              ...prev,
+              [qIndex]: { ...prev[qIndex], files: [...existingFiles, ...fileArray] }
+          }
+      });
+  }
+
+  const removePhoto = (qIndex, fileIdx) => {
+      setAnswers(prev => {
+          const files = [...(prev[qIndex]?.files || [])];
+          files.splice(fileIdx, 1);
+          return {
+              ...prev,
+              [qIndex]: { ...prev[qIndex], files }
+          }
+      });
+  }
+
   const handleSubmit = async () => {
-    if (!geo) { alert('يجب تحديد الموقع أولاً'); topRef.current.scrollIntoView(); return; }
-    if (!formData.contractor) { alert('يرجى إدخال اسم المقاول'); return; }
+    if (!geo) { alert('⚠️ يرجى تحديد الموقع أولاً'); topRef.current?.scrollIntoView({ behavior: 'smooth' }); return; }
+    if (!formData.contractor) { alert('⚠️ يرجى كتابة اسم المقاول'); topRef.current?.scrollIntoView({ behavior: 'smooth' }); return; }
     
-    setLoading(true); setBtnText('جاري المعالجة والإرسال...')
+    // --- التحقق من توقيع المستلم (إجباري) ---
+    if (sigPad.current.isEmpty()) {
+        alert('⚠️ يجب توقيع المستلم قبل إرسال التقرير');
+        // تمرير الشاشة تلقائياً لمنطقة التوقيع
+        sigContainerRef.current?.scrollIntoView({ behavior: 'smooth' });
+        return;
+    }
+
+    setLoading(true)
+    setBtnText('جاري ضغط الصور والمعالجة...')
+
     try {
+      const serial = Date.now()
       const payload = {
-        serial: Date.now(), inspector: user.username, timestamp: new Date().toLocaleString('ar-SA'),
-        ...formData, google_maps_link: geo, signature_image: sigPad.current.isEmpty() ? null : sigPad.current.toDataURL(),
-        answers: {}, violations: []
+        serial,
+        inspector: user.username,
+        timestamp: new Date().toLocaleString('ar-SA'),
+        ...formData,
+        google_maps_link: geo,
+        signature_image: sigPad.current.toDataURL('image/png', 0.5), // التوقيع مضمون موجود الآن
+        answers: {},
+        violations: []
       }
 
-      for (let i = 1; i <= qList.length; i++) {
-        const ans = answers[i] || {}; const val = ans.val || 'N/A'
-        payload.answers[i] = val === 'N/A' ? 'لا ينطبق' : val
+      for (let i = 0; i < qList.length; i++) {
+        const qKey = i + 1
+        const currentAns = answers[qKey] || {}
+        const val = currentAns.val || 'N/A'
+        const note = currentAns.note || ''
         
-        let compressedPics = []
-        if (ans.files) {
-          for (const f of ans.files) compressedPics.push(await compressImage(f))
+        payload.answers[qKey] = val === 'N/A' ? 'لا ينطبق' : val
+
+        // ضغط الصور
+        let processedPhotos = []
+        if (currentAns.files && currentAns.files.length > 0) {
+            setBtnText(`جاري رفع ${currentAns.files.length} صور للبند ${qKey}...`)
+            for (const file of currentAns.files) {
+                try {
+                    const compressed = await compressImage(file);
+                    processedPhotos.push(compressed);
+                } catch (e) { console.error("Compression error", e); }
+            }
         }
 
-        if (val === 'لا' || ans.note || compressedPics.length > 0) {
-          payload.violations.push({ q: qList[i-1], ans: val, note: ans.note, photos: compressedPics })
+        if (val === 'لا' || note || processedPhotos.length > 0) {
+          payload.violations.push({
+            q: qList[i],
+            ans: val === 'N/A' ? 'لا ينطبق' : val,
+            note,
+            photos: processedPhotos
+          })
         }
+      }
+
+      setBtnText('جاري إرسال البيانات للسيرفر...')
+      
+      const jsonString = JSON.stringify(payload);
+      if ((jsonString.length / 1024 / 1024) > 5.5) {
+          throw new Error("حجم الصور كبير جداً، يرجى تقليل عدد الصور أو جودتها");
       }
 
       const { error } = await supabase.from('reports').insert([payload])
       if (error) throw error
-      alert('تم إرسال التقرير بنجاح ✅'); window.location.reload()
+
+      alert('✅ تم إرسال التقرير بنجاح!')
+      window.location.reload()
+
     } catch (err) {
-      alert('حدث خطأ أثناء الإرسال: ' + err.message); setLoading(false); setBtnText('إعادة المحاولة')
+      console.error(err)
+      alert('خطأ في الإرسال: ' + err.message)
+      setBtnText('إعادة المحاولة')
+    } finally {
+      setLoading(false)
     }
   }
 
-  if (!user) return null
+  if (!user) return <div style={{display:'flex', justifyContent:'center', alignItems:'center', height:'100vh', fontFamily:'Cairo'}}>جاري تحميل النظام...</div>
 
   return (
     <div className="app-container">
       <style>{styles}</style>
       
       {/* Header */}
-      <div className="header" ref={topRef}>
-        <span><i className="fa-solid fa-user-shield"></i> {user.username}</span>
-        <button onClick={() => {sessionStorage.clear(); navigate('/')}} style={{background:'none', border:'none', color:'white', cursor:'pointer'}}><i className="fa-solid fa-power-off"></i></button>
-      </div>
-
-      <div style={{paddingTop: '10px'}}>
-        <h2 style={{textAlign:'center', color:'#005a8f', marginBottom:'0'}}>الشركة السعودية للكهرباء</h2>
-        <p style={{textAlign:'center', color:'#666', fontSize:'12px'}}>نظام تفتيش السلامة الميداني - ضواحي الرياض</p>
+      <div className="premium-header" ref={topRef}>
+        <div className="inspector-badge"><i className="fa-solid fa-user-shield"></i><span>{user.username}</span></div>
         
-        {/* GPS Section */}
-        <div className="card">
-          <div className="section-title"><i className="fa-solid fa-location-dot"></i> موقع العمل GPS</div>
-          <button onClick={getGeo} className="premium-input" style={{background: geo?'#ecfdf5':'#fff', border: geo?'2px solid #10b981':'1px solid #ddd', cursor:'pointer'}}>
-            {geo ? '✅ تم تحديد الموقع الجغرافي' : '📍 اضغط لتحديد الموقع الآن'}
-          </button>
-        </div>
-
-        {/* Info Form */}
-        <div className="card">
-          <div className="section-title"><i className="fa-solid fa-file-invoice"></i> البيانات الأساسية</div>
-          <div className="input-wrapper"><label className="input-label">الموقع (الحي / الشارع)</label>
-          <input className="premium-input" placeholder="مثال: حي النرجس / طريق الملك فهد" onChange={e => setFormData({...formData, location: e.target.value})} /></div>
-          
-          <div className="input-wrapper"><label className="input-label">فريق الزيارة</label>
-          <input className="premium-input" placeholder="أسماء المهندسين المشاركين" onChange={e => setFormData({...formData, visit_team: e.target.value})} /></div>
-
-          <div className="input-wrapper"><label className="input-label">اسم الاستشاري</label>
-          <input className="premium-input" placeholder="اسم الشركة الاستشارية" onChange={e => setFormData({...formData, consultant: e.target.value})} /></div>
-
-          <div className="input-wrapper"><label className="input-label">اسم المقاول</label>
-          <input className="premium-input" placeholder="اسم الشركة المنفذة للعمل" onChange={e => setFormData({...formData, contractor: e.target.value})} /></div>
-
-          <div className="input-wrapper"><label className="input-label">رقم أمر العمل / المقايسة</label>
-          <input className="premium-input" style={{borderColor: 'var(--accent)'}} placeholder="رقم أمر العمل الضروري" onChange={e => setFormData({...formData, order_number: e.target.value})} /></div>
-          
-          <div className="input-wrapper"><label className="input-label">وصف العمل الميداني</label>
-          <input className="premium-input" placeholder="مثال: صيانة كابلات أرضية / تركيب محول" onChange={e => setFormData({...formData, work_desc: e.target.value})} /></div>
-
-          <div className="input-wrapper"><label className="input-label">اسم مستلم العمل</label>
-          <input className="premium-input" placeholder="اسم الشخص المسؤول في الموقع" onChange={e => setFormData({...formData, receiver: e.target.value})} /></div>
-        </div>
-
-        {/* Checklist */}
-        <h3 style={{margin:'25px 20px 10px', color:'#333'}}>قائمة الفحص (41 بنداً)</h3>
-        {qList.map((q, i) => (
-          <div key={i} className={`q-card ${(answers[i+1]?.val) ? 'answered' : ''}`}>
-            <div style={{fontWeight:'700', fontSize:'14px', lineHeight:'1.4'}}>{q}</div>
-            <div className="opt-grid">
-              {['نعم', 'لا', 'N/A'].map(opt => (
-                <div key={opt} className={`opt-btn ${answers[i+1]?.val === opt ? 'active ' + (opt==='نعم'?'yes':opt==='لا'?'no':'na') : ''}`} onClick={() => handleAnswerChange(i+1, 'val', opt)}>
-                  {opt === 'N/A' ? 'لا ينطبق' : opt}
-                </div>
-              ))}
-            </div>
-            <button className="opt-btn" style={{width:'100%', marginTop:'12px', background:'#f8fafc', border:'1px dashed #ccc'}} onClick={() => document.getElementById(`pic-${i}`).click()}>
-              <i className="fa-solid fa-camera"></i> إضافة صور ميدانية
-            </button>
-            <input type="file" id={`pic-${i}`} hidden accept="image/*" multiple capture="environment" onChange={e => handleAddPhoto(i+1, e.target.files)} />
+        <div style={{display:'flex', gap:'15px', alignItems:'center'}}>
             
-            {/* عرض مصغرات الصور المضافة */}
-            {answers[i+1]?.files && (
-              <div style={{display:'flex', flexWrap:'wrap', marginTop:'10px'}}>
-                {answers[i+1].files.map((f, fi) => <img key={fi} src={URL.createObjectURL(f)} className="img-preview" />)}
-              </div>
+            {/* زر العودة للمدير (يظهر فقط إذا كان المستخدم أدمن) */}
+            {user.role === 'admin' && (
+                <button 
+                    onClick={() => navigate('/admin')} 
+                    style={{background:'rgba(255,255,255,0.2)', border:'1px solid rgba(255,255,255,0.4)', borderRadius:'8px', color:'white', padding:'5px 10px', cursor:'pointer', fontSize:'14px'}}
+                    title="عودة للوحة التحكم"
+                >
+                    <i className="fa-solid fa-chart-line"></i> مدير
+                </button>
             )}
 
-            <textarea className="premium-input" style={{marginTop:'10px', height:'45px', fontSize:'12px'}} placeholder="كتابة ملاحظة لهذا البند (اختياري)..." onChange={e => handleAnswerChange(i+1, 'note', e.target.value)} />
-          </div>
-        ))}
-
-        {/* التعهد والتحذير (قبل التوقيع) */}
-        <div className="card pledge-box">
-          <div className="pledge-text">
-            ⚠️ نؤكد بشكل قاطع أن دورك كمهندس مشرف لا يقتصر على رصد الملاحظات وإعداد التقارير فقط، بل يشمل المتابعة المباشرة والفعلية للأخطاء التي تم رصدها، والتأكد من تصحيحها فورًا، واتخاذ الإجراءات اللازمة لضمان عدم تكرارها مستقبلًا، مع تحمل المسؤولية النظامية كاملة حيال أي تقصير في ذلك.
-          </div>
-          <label className="checkbox-container" onClick={() => setPledged(!pledged)}>
-            <input type="checkbox" className="pledge-check" checked={pledged} onChange={() => {}} />
-            <span style={{fontWeight:'800', color:'#b91c1c', fontSize:'14px'}}>أقر وأتعهد بالالتزام بالمسؤوليات المذكورة أعلاه</span>
-          </label>
-        </div>
-
-        {/* Signature */}
-        <div className="card">
-          <div className="section-title"><i className="fa-solid fa-signature"></i> توقيع مستلم العمل</div>
-          <SignatureCanvas ref={sigPad} canvasProps={{className: 'sig-canvas'}} />
-          <button onClick={() => sigPad.current.clear()} style={{color:'red', border:'none', background:'none', cursor:'pointer', marginTop:'10px', fontWeight:'700'}}>
-            <i className="fa-solid fa-eraser"></i> مسح وإعادة التوقيع
-          </button>
+            <button onClick={() => { sessionStorage.clear(); navigate('/'); }} style={{background:'none', border:'none', color:'rgba(255,255,255,0.7)', cursor:'pointer', fontSize:'18px'}}><i className="fa-solid fa-arrow-right-from-bracket"></i></button>
         </div>
       </div>
 
-      {/* Footer */}
-      <div className="footer">
-        <button className="submit-btn" onClick={handleSubmit} disabled={loading || !pledged}>
-          {loading ? <i className="fa-solid fa-spinner fa-spin"></i> : <i className="fa-solid fa-paper-plane"></i>} 
-          {pledged ? ` ${btnText}` : ' يرجى الموافقة على التعهد لتفعيل الإرسال'}
-        </button>
+      <div style={{padding: '20px 15px'}}>
+        <h2 className="main-title">مجموعة السلامة ادارة ضواحي الرياض</h2>
+        <p style={{margin: '0 0 20px 0', color: '#64748b', fontSize: '14px', textAlign:'center'}}><i className="fa-regular fa-calendar"></i> {new Date().toLocaleDateString('ar-SA')}</p>
+
+        <div className="premium-card">
+          <div className="section-title"><i className="fa-solid fa-location-dot"></i>إثبات الموقع</div>
+          <div className={`verify-item ${geo ? 'done' : ''}`} onClick={getGeo}>
+            <i className={`fa-solid ${geo ? 'fa-map-location-dot' : 'fa-location-crosshairs'} verify-icon`}></i>
+            <div style={{fontWeight:'bold', fontSize:'14px'}}>{geo ? 'تم تحديد الموقع' : 'تحديد الموقع GPS'}</div>
+             <div style={{fontSize:'11px', color:'#94a3b8', marginTop:'5px'}}>{geo ? 'إحداثيات دقيقة ✅' : 'اضغط لتفعيل GPS'}</div>
+          </div>
+        </div>
+
+        <div className="premium-card">
+          <div className="section-title"><i className="fa-solid fa-file-contract"></i>بيانات التقرير</div>
+          <div className="input-wrapper"><label className="input-label">موقع العمل (الحي / الشارع)</label><input className="premium-input" placeholder="الحي / الشارع..." value={formData.location} onChange={(e) => setFormData({...formData, location: e.target.value})} /><i className="fa-solid fa-map-pin input-icon"></i></div>
+          <div className="input-wrapper"><label className="input-label">فريق الزيارة</label><input className="premium-input" placeholder="اسماء فريق الزيارة..." value={formData.visit_team} onChange={(e) => setFormData({...formData, visit_team: e.target.value})} /><i className="fa-solid fa-users input-icon"></i></div>
+          <div className="input-wrapper"><label className="input-label">اسم الاستشاري</label><input className="premium-input" placeholder="اسم الاستشاري..." value={formData.consultant} onChange={(e) => setFormData({...formData, consultant: e.target.value})} /><i className="fa-solid fa-user-tie input-icon"></i></div>
+          <div className="input-wrapper"><label className="input-label">اسم المقاول</label><input className="premium-input" placeholder="اكتب اسم الشركة المنفذة..." value={formData.contractor} onChange={(e) => setFormData({...formData, contractor: e.target.value})} /><i className="fa-solid fa-hard-hat input-icon"></i></div>
+          <div className="input-wrapper"><label className="input-label">رقم المقايسة / أمر العمل</label><input className="premium-input" placeholder="رقم أمر العمل..." value={formData.order_number} onChange={(e) => setFormData({...formData, order_number: e.target.value})} /><i className="fa-solid fa-file-invoice input-icon"></i></div>
+          <div className="input-wrapper"><label className="input-label">وصف العمل</label><input className="premium-input" placeholder="صيانة / تركيب / حفر..." value={formData.work_desc} onChange={(e) => setFormData({...formData, work_desc: e.target.value})} /><i className="fa-solid fa-briefcase input-icon"></i></div>
+          <div className="input-wrapper"><label className="input-label">المستلم</label><input className="premium-input" placeholder="اسم مستلم العمل..." value={formData.receiver} onChange={(e) => setFormData({...formData, receiver: e.target.value})} /><i className="fa-solid fa-user-check input-icon"></i></div>
+        </div>
+
+        <h3 style={{margin:'20px 15px 10px', color:'#0f172a', textAlign:'right'}}>قائمة الفحص</h3>
+        {qList.map((q, i) => {
+          const qIdx = i + 1
+          const currentVal = answers[qIdx]?.val || 'N/A'
+          const isAnswered = answers[qIdx]?.val && answers[qIdx]?.val !== 'N/A'
+          const currentFiles = answers[qIdx]?.files || []
+
+          return (
+            <div key={i} className={`question-card ${isAnswered ? 'answered' : ''}`}>
+              <div className="q-text">{qIdx}. {q}</div>
+              
+              <div className="options-container">
+                <div className={`option-btn yes ${currentVal === 'نعم' ? 'active' : ''}`} onClick={() => handleAnswerChange(qIdx, 'val', 'نعم')}><i className="fa-solid fa-check"></i> نعم</div>
+                <div className={`option-btn no ${currentVal === 'لا' ? 'active' : ''}`} onClick={() => handleAnswerChange(qIdx, 'val', 'لا')}><i className="fa-solid fa-xmark"></i> لا</div>
+                <div className={`option-btn na ${currentVal === 'N/A' ? 'active' : ''}`} onClick={() => handleAnswerChange(qIdx, 'val', 'N/A')}>لا ينطبق</div>
+              </div>
+
+              <div className="actions-row">
+                  <div className="action-btn" onClick={() => document.getElementById(`cam-${qIdx}`).click()}>
+                    <i className="fa-solid fa-camera" style={{color:'var(--primary)'}}></i>التقاط صورة
+                  </div>
+              </div>
+
+              <input type="file" id={`cam-${qIdx}`} style={{display:'none'}} accept="image/*" multiple capture="environment" onChange={(e) => handleAddPhoto(qIdx, e.target.files)} />
+
+              {currentFiles.length > 0 && (
+                  <div className="img-grid">
+                      {currentFiles.map((file, idx) => (
+                          <div key={idx} style={{position:'relative'}}>
+                              <img src={URL.createObjectURL(file)} className="img-thumb" alt="preview" />
+                              <button className="del-btn" onClick={() => removePhoto(qIdx, idx)}>×</button>
+                          </div>
+                      ))}
+                  </div>
+              )}
+              
+              <textarea className="note-input" placeholder="أضف ملاحظاتك هنا..." rows="1" onChange={(e) => handleAnswerChange(qIdx, 'note', e.target.value)} />
+            </div>
+          )
+        })}
+
+        <div className="premium-card" ref={sigContainerRef}>
+          <div className="section-title">
+            <i className="fa-solid fa-file-signature"></i>
+            توقيع المستلم <span style={{color:'red', fontSize:'12px', marginRight:'5px'}}>(إجباري)</span>
+          </div>
+          <div className="sig-wrapper" style={{border: '2px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden'}}>
+            <SignatureCanvas ref={sigPad} canvasProps={{ className: 'sig-canvas' }} backgroundColor="rgb(255, 255, 255)" />
+          </div>
+          <button onClick={() => sigPad.current.clear()} style={{marginTop:'10px', color:'#ef4444', background:'none', border:'none', fontWeight:'bold', cursor:'pointer'}}><i className="fa-solid fa-eraser"></i> مسح التوقيع</button>
+        </div>
+      </div>
+
+      <div className="floating-footer">
+        <button className="submit-main-btn" onClick={handleSubmit} disabled={loading}>{loading ? <i className="fa-solid fa-spinner fa-spin"></i> : <i className="fa-regular fa-paper-plane"></i>} {btnText}</button>
       </div>
     </div>
   )
 }
+
 export default InspectorApp
