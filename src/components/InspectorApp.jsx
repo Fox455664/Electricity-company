@@ -51,13 +51,17 @@ const InspectorApp = () => {
   const navigate = useNavigate()
   const sigPad = useRef(null)
   const topRef = useRef(null)
-  const sigContainerRef = useRef(null) // مرجع لمكان التوقيع عشان السكرول
+  const sigContainerRef = useRef(null)
+  const warningRef = useRef(null) // مرجع للتعهد
 
   // States
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(false)
   const [btnText, setBtnText] = useState('إعتماد وإرسال التقرير')
   
+  // New State for Acknowledgement (التعهد)
+  const [isAcknowledged, setIsAcknowledged] = useState(false)
+
   // Form Data
   const [formData, setFormData] = useState({
     contractor: '',
@@ -95,6 +99,67 @@ const InspectorApp = () => {
     .inspector-badge { background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(5px); padding: 8px 16px; border-radius: 50px; font-size: 13px; display: flex; align-items: center; gap: 8px; }
     .main-title { text-align: center; margin: 0 0 5px 0; color: #0f172a; font-size: 20px; font-weight: 800; }
     .premium-card { background: var(--card-bg); border-radius: var(--border-radius); padding: 20px; margin: 15px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03); border: 1px solid #e2e8f0; }
+    
+    /* ستايل التعهد الجديد */
+    .warning-card {
+        background: #fef2f2;
+        border: 2px solid #ef4444;
+        box-shadow: 0 4px 15px rgba(239, 68, 68, 0.15);
+        animation: pulse-border 2s infinite;
+    }
+    @keyframes pulse-border {
+        0% { border-color: #ef4444; }
+        50% { border-color: #f87171; }
+        100% { border-color: #ef4444; }
+    }
+    .warning-title {
+        color: #b91c1c;
+        font-weight: 900;
+        font-size: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        margin-bottom: 15px;
+    }
+    .warning-text {
+        color: #b91c1c;
+        font-weight: 700;
+        font-size: 15px;
+        line-height: 1.8;
+        text-align: center;
+        margin-bottom: 20px;
+        border-bottom: 1px dashed #fca5a5;
+        padding-bottom: 15px;
+    }
+    .ack-label {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        cursor: pointer;
+        padding: 10px;
+        background: white;
+        border-radius: 10px;
+        border: 1px solid #fca5a5;
+        transition: all 0.3s;
+    }
+    .ack-label:hover {
+        background: #fff1f2;
+    }
+    .ack-checkbox {
+        width: 22px;
+        height: 22px;
+        accent-color: #dc2626;
+        cursor: pointer;
+    }
+    .ack-text-label {
+        font-weight: bold;
+        color: #991b1b;
+        font-size: 14px;
+        user-select: none;
+    }
+
     .section-title { font-size: 18px; font-weight: 700; color: var(--primary); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; }
     .verify-item { background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 12px; padding: 20px; text-align: center; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; }
     .verify-item.done { border-style: solid; border-color: var(--success); background: #ecfdf5; }
@@ -119,8 +184,8 @@ const InspectorApp = () => {
     .del-btn { position: absolute; top: -5px; right: -5px; background: #ef4444; color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 12px; cursor: pointer; border: none; }
     .note-input { width: 100%; margin-top: 10px; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; font-family: 'Cairo'; font-size: 13px; resize: none; box-sizing: border-box; }
     .floating-footer { position: fixed; bottom: 20px; left: 20px; right: 20px; background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); padding: 15px; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); z-index: 100; display: flex; justify-content: center; }
-    .submit-main-btn { background: linear-gradient(135deg, var(--accent) 0%, #e67e00 100%); color: white; border: none; padding: 16px 40px; border-radius: 50px; font-weight: 700; font-size: 16px; width: 100%; box-shadow: 0 4px 15px rgba(242, 139, 0, 0.4); cursor: pointer; font-family: 'Cairo', sans-serif; }
-    .submit-main-btn:disabled { background: #cbd5e1; cursor: not-allowed; }
+    .submit-main-btn { background: linear-gradient(135deg, var(--accent) 0%, #e67e00 100%); color: white; border: none; padding: 16px 40px; border-radius: 50px; font-weight: 700; font-size: 16px; width: 100%; box-shadow: 0 4px 15px rgba(242, 139, 0, 0.4); cursor: pointer; font-family: 'Cairo', sans-serif; transition: all 0.3s; }
+    .submit-main-btn:disabled { background: #cbd5e1; cursor: not-allowed; box-shadow: none; opacity: 0.7; }
     .sig-canvas { width: 100% !important; height: 200px !important; border-radius: 8px; }
   `;
 
@@ -202,13 +267,18 @@ const InspectorApp = () => {
   }
 
   const handleSubmit = async () => {
+    // --- 1. التحقق من التعهد أولاً ---
+    if (!isAcknowledged) {
+        alert('⛔ تنبيه هام: يجب قراءة التحذير في أعلى الصفحة والموافقة عليه قبل إرسال التقرير.');
+        warningRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+    }
+
     if (!geo) { alert('⚠️ يرجى تحديد الموقع أولاً'); topRef.current?.scrollIntoView({ behavior: 'smooth' }); return; }
     if (!formData.contractor) { alert('⚠️ يرجى كتابة اسم المقاول'); topRef.current?.scrollIntoView({ behavior: 'smooth' }); return; }
     
-    // --- التحقق من توقيع المستلم (إجباري) ---
     if (sigPad.current.isEmpty()) {
         alert('⚠️ يجب توقيع المستلم قبل إرسال التقرير');
-        // تمرير الشاشة تلقائياً لمنطقة التوقيع
         sigContainerRef.current?.scrollIntoView({ behavior: 'smooth' });
         return;
     }
@@ -224,7 +294,7 @@ const InspectorApp = () => {
         timestamp: new Date().toLocaleString('ar-SA'),
         ...formData,
         google_maps_link: geo,
-        signature_image: sigPad.current.toDataURL('image/png', 0.5), // التوقيع مضمون موجود الآن
+        signature_image: sigPad.current.toDataURL('image/png', 0.5),
         answers: {},
         violations: []
       }
@@ -237,7 +307,6 @@ const InspectorApp = () => {
         
         payload.answers[qKey] = val === 'N/A' ? 'لا ينطبق' : val
 
-        // ضغط الصور
         let processedPhotos = []
         if (currentAns.files && currentAns.files.length > 0) {
             setBtnText(`جاري رفع ${currentAns.files.length} صور للبند ${qKey}...`)
@@ -290,20 +359,15 @@ const InspectorApp = () => {
       {/* Header */}
       <div className="premium-header" ref={topRef}>
         <div className="inspector-badge"><i className="fa-solid fa-user-shield"></i><span>{user.username}</span></div>
-        
         <div style={{display:'flex', gap:'15px', alignItems:'center'}}>
-            
-            {/* زر العودة للمدير (يظهر فقط إذا كان المستخدم أدمن) */}
             {user.role === 'admin' && (
                 <button 
                     onClick={() => navigate('/admin')} 
                     style={{background:'rgba(255,255,255,0.2)', border:'1px solid rgba(255,255,255,0.4)', borderRadius:'8px', color:'white', padding:'5px 10px', cursor:'pointer', fontSize:'14px'}}
-                    title="عودة للوحة التحكم"
                 >
                     <i className="fa-solid fa-chart-line"></i> مدير
                 </button>
             )}
-
             <button onClick={() => { sessionStorage.clear(); navigate('/'); }} style={{background:'none', border:'none', color:'rgba(255,255,255,0.7)', cursor:'pointer', fontSize:'18px'}}><i className="fa-solid fa-arrow-right-from-bracket"></i></button>
         </div>
       </div>
@@ -311,6 +375,27 @@ const InspectorApp = () => {
       <div style={{padding: '20px 15px'}}>
         <h2 className="main-title">مجموعة السلامة ادارة ضواحي الرياض</h2>
         <p style={{margin: '0 0 20px 0', color: '#64748b', fontSize: '14px', textAlign:'center'}}><i className="fa-regular fa-calendar"></i> {new Date().toLocaleDateString('ar-SA')}</p>
+
+        {/* --- قسم التحذير الإجباري الجديد --- */}
+        <div className="premium-card warning-card" ref={warningRef}>
+            <div className="warning-title">
+                <i className="fa-solid fa-triangle-exclamation fa-beat" style={{color:'#ef4444'}}></i>
+                تنبيه وإقرار هام
+            </div>
+            <div className="warning-text">
+                نؤكد بشكل قاطع أن دورك كمهندس مشرف لا يقتصر على رصد الملاحظات وإعداد التقارير فقط، بل يشمل المتابعة المباشرة والفعلية للأخطاء التي تم رصدها، والتأكد من تصحيحها فورًا، واتخاذ الإجراءات اللازمة لضمان عدم تكرارها مستقبلًا، مع تحمل المسؤولية النظامية كاملة حيال أي تقصير في ذلك.
+            </div>
+            <label className="ack-label">
+                <input 
+                    type="checkbox" 
+                    className="ack-checkbox"
+                    checked={isAcknowledged}
+                    onChange={(e) => setIsAcknowledged(e.target.checked)}
+                />
+                <span className="ack-text-label">أقر بأنني قرأت وفهمت وألتزم بما ورد أعلاه</span>
+            </label>
+        </div>
+        {/* ---------------------------------- */}
 
         <div className="premium-card">
           <div className="section-title"><i className="fa-solid fa-location-dot"></i>إثبات الموقع</div>
@@ -386,7 +471,15 @@ const InspectorApp = () => {
       </div>
 
       <div className="floating-footer">
-        <button className="submit-main-btn" onClick={handleSubmit} disabled={loading}>{loading ? <i className="fa-solid fa-spinner fa-spin"></i> : <i className="fa-regular fa-paper-plane"></i>} {btnText}</button>
+        {/* الزر الآن يتأثر بحالة التعهد */}
+        <button 
+            className="submit-main-btn" 
+            onClick={handleSubmit} 
+            disabled={loading || !isAcknowledged} // تعطيل الزر بصرياً أيضاً
+            title={!isAcknowledged ? "يجب الموافقة على التحذير أعلاه أولاً" : ""}
+        >
+            {loading ? <i className="fa-solid fa-spinner fa-spin"></i> : <i className="fa-regular fa-paper-plane"></i>} {btnText}
+        </button>
       </div>
     </div>
   )
