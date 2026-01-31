@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import SignatureCanvas from 'react-signature-canvas'
 import { supabase } from '../supabaseClient'
 
-// القائمة الموحدة
+// القائمة الموحدة (تمت إضافة البند 43)
 const qList = [
     "تصريح العمل الأساسي والثانوي متواجد بموقع العمل", 
     "اجتماع ما قبل البدء بالعمل متواجد بموقع العمل", 
@@ -45,7 +45,8 @@ const qList = [
     "خطة الإنقاذ في العمل على المرتفعات", 
     "خطة رفع الأحمال الحرجة", 
     "ملصقات العمل على مرتفعات اوملصق أغراض متساقطة",
-    "صور البطاقات"
+    "صور البطاقات",
+    "الإجراءات المتخذة حيال الملاحظات المرصودة" // البند الجديد
 ];
 
 const InspectorApp = () => {
@@ -69,7 +70,7 @@ const InspectorApp = () => {
   const [showCamera, setShowCamera] = useState(false)
   const [currentCameraQ, setCurrentCameraQ] = useState(null)
   const [cameraStream, setCameraStream] = useState(null)
-  const [tempPhotos, setTempPhotos] = useState([]) // الصور الملتقطة مؤقتاً
+  const [tempPhotos, setTempPhotos] = useState([]) 
 
   // Form Data
   const [formData, setFormData] = useState({
@@ -131,45 +132,50 @@ const InspectorApp = () => {
     .submit-main-btn:disabled { background: #cbd5e1; cursor: not-allowed; box-shadow: none; opacity: 0.7; }
     .sig-canvas { width: 100% !important; height: 200px !important; border-radius: 8px; }
 
-    /* --- Custom Camera Modal Styles --- */
+    /* --- Custom Camera Modal Styles Updated --- */
     .camera-modal {
-      position: fixed; inset: 0; background: black; z-index: 9999;
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: black; z-index: 99999;
       display: flex; flex-direction: column;
+      width: 100vw; height: 100vh;
     }
     .camera-video {
-      width: 100%; height: 100%; object-fit: cover; flex: 1;
+      width: 100%; height: 100%; 
+      object-fit: cover; /* يجعل الصورة تملأ الشاشة بالكامل */
+      flex: 1;
     }
     .camera-controls {
-      position: absolute; bottom: 20px; left: 0; right: 0;
+      position: absolute; bottom: 30px; left: 0; right: 0;
       display: flex; justify-content: space-around; align-items: center;
       padding: 20px;
+      z-index: 100000;
     }
     .snap-btn {
-      width: 70px; height: 70px; border-radius: 50%;
-      background: white; border: 4px solid #ccc;
+      width: 80px; height: 80px; border-radius: 50%;
+      background: white; border: 5px solid #ccc;
       cursor: pointer;
     }
     .snap-btn:active { transform: scale(0.95); background: #eee; }
     
     .done-btn-cam {
-      background: #10b981; color: white; padding: 10px 20px; border-radius: 30px; border:none; font-weight:bold; cursor:pointer;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+      background: #10b981; color: white; padding: 12px 25px; border-radius: 30px; border:none; font-weight:bold; cursor:pointer;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3); font-size: 16px;
     }
     .close-btn-cam {
-      background: rgba(255,255,255,0.2); color: white; padding: 10px 20px; border-radius: 30px; border:none; cursor:pointer;
-      backdrop-filter: blur(4px);
+      background: rgba(255,255,255,0.2); color: white; padding: 12px 25px; border-radius: 30px; border:none; cursor:pointer;
+      backdrop-filter: blur(4px); font-size: 16px;
     }
     .camera-counter {
-      position: absolute; top: 20px; left: 20px;
-      background: rgba(0,0,0,0.6); color: white; padding: 5px 15px; border-radius: 20px;
-      font-weight: bold; font-size: 14px;
+      position: absolute; top: 40px; left: 30px;
+      background: rgba(0,0,0,0.6); color: white; padding: 8px 20px; border-radius: 20px;
+      font-weight: bold; font-size: 16px; z-index: 100000;
     }
     .temp-thumbs {
-      position: absolute; bottom: 100px; left: 0; right: 0;
-      display: flex; gap: 10px; padding: 10px; overflow-x: auto;
-      background: rgba(0,0,0,0.3);
+      position: absolute; bottom: 120px; left: 0; right: 0;
+      display: flex; gap: 10px; padding: 15px; overflow-x: auto;
+      background: rgba(0,0,0,0.4); z-index: 100000;
     }
-    .temp-img { width: 50px; height: 50px; border-radius: 6px; border: 2px solid white; object-fit: cover; }
+    .temp-img { width: 60px; height: 60px; border-radius: 8px; border: 2px solid white; object-fit: cover; }
   `;
 
   useEffect(() => {
@@ -193,7 +199,11 @@ const InspectorApp = () => {
       setTempPhotos([])
       setShowCamera(true)
       const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'environment' } 
+        video: { 
+            facingMode: 'environment',
+            width: { ideal: 1920 }, // محاولة لطلب دقة عالية
+            height: { ideal: 1080 }
+        } 
       })
       setCameraStream(stream)
       if (videoRef.current) {
@@ -271,13 +281,13 @@ const InspectorApp = () => {
         img.src = e.target.result
         img.onload = () => {
           const elem = document.createElement('canvas')
-          const MAX_WIDTH = 500
+          const MAX_WIDTH = 800 // زيادة الدقة قليلاً
           const scaleFactor = MAX_WIDTH / img.width
           elem.width = MAX_WIDTH
           elem.height = img.height * scaleFactor
           const ctx = elem.getContext('2d')
           ctx.drawImage(img, 0, 0, elem.width, elem.height)
-          resolve(elem.toDataURL('image/jpeg', 0.5))
+          resolve(elem.toDataURL('image/jpeg', 0.6))
         }
       }
     })
@@ -290,9 +300,37 @@ const InspectorApp = () => {
         warningRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
         return;
     }
-    if (!geo) { alert('⚠️ يرجى تحديد الموقع'); topRef.current?.scrollIntoView(); return; }
-    if (!formData.contractor) { alert('⚠️ اسم المقاول مطلوب'); topRef.current?.scrollIntoView(); return; }
-    if (sigPad.current.isEmpty()) { alert('⚠️ التوقيع مطلوب'); sigContainerRef.current?.scrollIntoView(); return; }
+
+    if (!geo) { 
+        alert('⚠️ يرجى تحديد الموقع'); 
+        topRef.current?.scrollIntoView(); 
+        return; 
+    }
+
+    // --- التحقق من الحقول الإجبارية (Required Fields Check) ---
+    const requiredFields = [
+        { key: 'location', label: 'موقع العمل' },
+        { key: 'visit_team', label: 'فريق الزيارة' },
+        { key: 'consultant', label: 'اسم الاستشاري' },
+        { key: 'contractor', label: 'اسم المقاول' },
+        { key: 'order_number', label: 'رقم المقايسة / أمر العمل' },
+        { key: 'work_desc', label: 'وصف العمل' },
+        { key: 'receiver', label: 'المستلم' },
+    ];
+
+    for (const field of requiredFields) {
+        if (!formData[field.key] || formData[field.key].trim() === '') {
+            alert(`⚠️ حقل "${field.label}" مطلوب، لا يمكن ترك الحقول فارغة.`);
+            topRef.current?.scrollIntoView();
+            return;
+        }
+    }
+
+    if (sigPad.current.isEmpty()) { 
+        alert('⚠️ التوقيع مطلوب'); 
+        sigContainerRef.current?.scrollIntoView(); 
+        return; 
+    }
 
     setLoading(true)
     setBtnText('جاري المعالجة...')
@@ -326,6 +364,7 @@ const InspectorApp = () => {
             }
         }
 
+        // إذا كانت الإجابة لا، أو يوجد ملاحظات، أو يوجد صور، يتم إضافتها للمخالفات
         if (val === 'لا' || currentAns.note || processedPhotos.length > 0) {
           payload.violations.push({
             q: qList[i],
@@ -409,13 +448,13 @@ const InspectorApp = () => {
         {/* Info Section */}
         <div className="premium-card">
           <div className="section-title"><i className="fa-solid fa-file-contract"></i>بيانات التقرير</div>
-          <div className="input-wrapper"><label className="input-label">موقع العمل (الحي / الشارع)</label><input className="premium-input" value={formData.location} onChange={(e) => setFormData({...formData, location: e.target.value})} /><i className="fa-solid fa-map-pin input-icon"></i></div>
-          <div className="input-wrapper"><label className="input-label">فريق الزيارة</label><input className="premium-input" value={formData.visit_team} onChange={(e) => setFormData({...formData, visit_team: e.target.value})} /><i className="fa-solid fa-users input-icon"></i></div>
-          <div className="input-wrapper"><label className="input-label">اسم الاستشاري</label><input className="premium-input" value={formData.consultant} onChange={(e) => setFormData({...formData, consultant: e.target.value})} /><i className="fa-solid fa-user-tie input-icon"></i></div>
-          <div className="input-wrapper"><label className="input-label">اسم المقاول</label><input className="premium-input" value={formData.contractor} onChange={(e) => setFormData({...formData, contractor: e.target.value})} /><i className="fa-solid fa-hard-hat input-icon"></i></div>
-          <div className="input-wrapper"><label className="input-label">رقم المقايسة / أمر العمل</label><input className="premium-input" value={formData.order_number} onChange={(e) => setFormData({...formData, order_number: e.target.value})} /><i className="fa-solid fa-file-invoice input-icon"></i></div>
-          <div className="input-wrapper"><label className="input-label">وصف العمل</label><input className="premium-input" value={formData.work_desc} onChange={(e) => setFormData({...formData, work_desc: e.target.value})} /><i className="fa-solid fa-briefcase input-icon"></i></div>
-          <div className="input-wrapper"><label className="input-label">المستلم</label><input className="premium-input" value={formData.receiver} onChange={(e) => setFormData({...formData, receiver: e.target.value})} /><i className="fa-solid fa-user-check input-icon"></i></div>
+          <div className="input-wrapper"><label className="input-label">موقع العمل (الحي / الشارع) *</label><input className="premium-input" value={formData.location} onChange={(e) => setFormData({...formData, location: e.target.value})} placeholder="مطلوب" /><i className="fa-solid fa-map-pin input-icon"></i></div>
+          <div className="input-wrapper"><label className="input-label">فريق الزيارة *</label><input className="premium-input" value={formData.visit_team} onChange={(e) => setFormData({...formData, visit_team: e.target.value})} placeholder="مطلوب" /><i className="fa-solid fa-users input-icon"></i></div>
+          <div className="input-wrapper"><label className="input-label">اسم الاستشاري *</label><input className="premium-input" value={formData.consultant} onChange={(e) => setFormData({...formData, consultant: e.target.value})} placeholder="مطلوب" /><i className="fa-solid fa-user-tie input-icon"></i></div>
+          <div className="input-wrapper"><label className="input-label">اسم المقاول *</label><input className="premium-input" value={formData.contractor} onChange={(e) => setFormData({...formData, contractor: e.target.value})} placeholder="مطلوب" /><i className="fa-solid fa-hard-hat input-icon"></i></div>
+          <div className="input-wrapper"><label className="input-label">رقم المقايسة / أمر العمل *</label><input className="premium-input" value={formData.order_number} onChange={(e) => setFormData({...formData, order_number: e.target.value})} placeholder="مطلوب" /><i className="fa-solid fa-file-invoice input-icon"></i></div>
+          <div className="input-wrapper"><label className="input-label">وصف العمل *</label><input className="premium-input" value={formData.work_desc} onChange={(e) => setFormData({...formData, work_desc: e.target.value})} placeholder="مطلوب" /><i className="fa-solid fa-briefcase input-icon"></i></div>
+          <div className="input-wrapper"><label className="input-label">المستلم *</label><input className="premium-input" value={formData.receiver} onChange={(e) => setFormData({...formData, receiver: e.target.value})} placeholder="مطلوب" /><i className="fa-solid fa-user-check input-icon"></i></div>
         </div>
 
         {/* Questions */}
