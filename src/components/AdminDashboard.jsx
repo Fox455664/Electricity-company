@@ -222,145 +222,154 @@ const AdminDashboard = () => {
     setShowPassword(prev => ({ ...prev, [username]: !prev[username] }))
   }
 
-  // --- PDF Generation Logic (المعدل والمحسن) ---
+  // --- PDF Generation Logic (المعدل: تسلسل كامل بدون جداول مفصولة) ---
   const generatePDF = (r) => {
     const container = document.createElement('div')
     
-    // إعدادات CSS للطباعة (منع التقطيع وتنسيق الكروت)
     const pdfStyles = `
       <style>
         @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap');
         body { font-family: 'Cairo', sans-serif; direction: rtl; color: #333; -webkit-print-color-adjust: exact; }
         
-        .header-section { text-align: center; border-bottom: 3px solid #f28b00; padding-bottom: 15px; margin-bottom: 20px; }
-        .header-title { color: #005a8f; font-size: 24px; font-weight: 800; margin: 0; }
-        .header-sub { color: #666; font-size: 14px; margin: 5px 0; }
+        .header-section { text-align: center; border-bottom: 3px solid #f28b00; padding-bottom: 10px; margin-bottom: 15px; }
+        .header-title { color: #005a8f; font-size: 22px; font-weight: 800; margin: 0; }
+        .header-sub { color: #666; font-size: 13px; margin: 5px 0; }
 
         .info-grid { 
             display: grid; grid-template-columns: 1fr 1fr; gap: 8px; 
-            font-size: 12px; background: #f8fafc; padding: 15px; 
+            font-size: 11px; background: #f8fafc; padding: 10px; 
             border-radius: 8px; margin-bottom: 20px; border: 1px solid #e2e8f0; 
         }
 
-        /* كارت الملاحظة */
+        /* حاوية البند (سواء كبير أو صغير) - تمنع القص */
+        .item-wrapper {
+            margin-bottom: 8px;
+            page-break-inside: avoid; 
+            break-inside: avoid;
+        }
+
+        /* التصميم 1: الكارت التفصيلي (للصور والمخالفات والملاحظات) */
         .observation-card {
             background: #fff;
             border: 1px solid #ddd;
             border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 15px;
-            page-break-inside: avoid; /* منع القص */
-            break-inside: avoid;
+            padding: 12px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
 
-        /* ألوان الكارت */
-        .card-danger { border-right: 5px solid #dc2626; background-color: #fef2f2; }
-        .card-success { border-right: 5px solid #16a34a; background-color: #f0fdf4; }
-        .card-neutral { border-right: 5px solid #64748b; background-color: #f8fafc; }
+        /* التصميم 2: الشريط المختصر (حالات نعم/لا ينطبق بدون صور) */
+        .simple-strip {
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 8px 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+        }
 
-        .q-title { font-weight: 800; font-size: 14px; margin-bottom: 8px; color: #1e293b; }
-        .q-status { font-size: 12px; font-weight: bold; margin-bottom: 5px; }
-        .q-note { font-size: 12px; color: #555; background: rgba(255,255,255,0.7); padding: 5px; border-radius: 4px; border: 1px dashed #ccc; margin-bottom: 10px; }
+        /* الألوان للحالات */
+        .status-danger { border-right: 5px solid #dc2626; background-color: #fef2f2; }
+        .status-success { border-right: 5px solid #16a34a; background-color: #f0fdf4; }
+        .status-neutral { border-right: 5px solid #94a3b8; background-color: #f8fafc; }
 
-        /* حاوية الصور الكبيرة */
+        .q-title { font-weight: 800; font-size: 13px; color: #1e293b; margin-bottom: 5px; }
+        .q-ans-badge { font-weight: bold; padding: 2px 8px; border-radius: 4px; font-size: 11px; }
+        
+        .q-note { font-size: 11px; color: #555; background: rgba(255,255,255,0.7); padding: 5px; border-radius: 4px; border: 1px dashed #ccc; margin-top: 5px; }
+
         .photos-container {
             display: flex;
             flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 10px;
-            justify-content: flex-start;
+            gap: 8px;
+            margin-top: 8px;
         }
-        .large-evidence-img {
-            width: 48%; /* عرض كبير للصورة */
-            height: 220px; 
+        .evidence-img {
+            width: 48%; 
+            height: 180px; 
             object-fit: cover; 
             border-radius: 6px;
             border: 1px solid #cbd5e1;
             background-color: #fff;
         }
 
-        table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 20px; }
-        th { background: #005a8f; color: white; padding: 8px; text-align: right; }
-        td { border-bottom: 1px solid #eee; padding: 6px; }
-        tr { page-break-inside: avoid; }
-
-        .footer { margin-top: 30px; display: flex; justify-content: space-between; page-break-inside: avoid; }
+        .footer { margin-top: 30px; display: flex; justify-content: space-between; page-break-inside: avoid; border-top: 1px solid #eee; padding-top: 20px; }
       </style>
     `
 
-    let detailedItemsHTML = ''
-    let simpleItemsRows = ''
+    let allItemsHTML = ''
 
+    // دمج جميع الأسئلة في قائمة واحدة متسلسلة (1 إلى 41)
     fullQuestionsList.forEach((q, i) => {
-        // البحث عن البند في قائمة الانتهاكات
+        // البحث عن البيانات في التقرير
         const violationData = r.violations?.find(v => v.q === q);
-        // البحث عن الإجابة في القائمة العادية
         const normalAns = r.answers && r.answers[i+1];
         let finalAns = "لا ينطبق";
-
+        
         if (violationData) finalAns = violationData.ans;
         else if (normalAns) finalAns = normalAns.val || normalAns;
         
         if (finalAns === 'N/A') finalAns = 'لا ينطبق';
 
-        // الشروط لعرض البند في كارت تفصيلي:
-        // 1. إذا كانت الإجابة "لا" (مخالفة) -> أحمر
-        // 2. إذا كانت "نعم" + يوجد صور (توثيق) -> أخضر
-        // 3. إذا كان هناك ملاحظة نصية
+        // الشروط لتحديد شكل العرض
         const hasPhotos = violationData && (violationData.photos?.length > 0 || violationData.photo);
         const hasNote = violationData && violationData.note;
         const isDanger = finalAns === 'لا';
+        const isSuccess = finalAns === 'نعم';
 
+        // تحديد الألوان
+        let statusClass = 'status-neutral';
+        let ansColor = '#64748b'; // رمادي
+        let ansBg = '#f1f5f9';
+
+        if (isDanger) {
+            statusClass = 'status-danger';
+            ansColor = '#dc2626'; ansBg = '#fee2e2';
+        } else if (isSuccess) {
+            statusClass = 'status-success';
+            ansColor = '#16a34a'; ansBg = '#dcfce7';
+        }
+
+        // إذا كان هناك صور أو مخالفة أو ملاحظة -> اعرض كارت كبير
         if (isDanger || hasPhotos || hasNote) {
-            // تحديد نمط الكارت
-            let cardClass = 'card-neutral';
-            let statusColor = '#64748b';
             
-            if (isDanger) {
-                cardClass = 'card-danger';
-                statusColor = '#dc2626';
-            } else if (finalAns === 'نعم') {
-                cardClass = 'card-success'; // لون أخضر للتوثيق الإيجابي
-                statusColor = '#16a34a';
-            }
-
             // تجهيز الصور
             let photosHTML = '';
             if (hasPhotos) {
                 photosHTML = `<div class="photos-container">`;
                 if (violationData.photos && violationData.photos.length > 0) {
                     violationData.photos.forEach(src => {
-                        photosHTML += `<img src="${src}" class="large-evidence-img" />`;
+                        photosHTML += `<img src="${src}" class="evidence-img" />`;
                     });
                 } else if (violationData.photo) {
-                    photosHTML += `<img src="${violationData.photo}" class="large-evidence-img" />`;
+                    photosHTML += `<img src="${violationData.photo}" class="evidence-img" />`;
                 }
                 photosHTML += `</div>`;
             }
 
-            detailedItemsHTML += `
-                <div class="observation-card ${cardClass}">
-                    <div class="q-title">${i+1}. ${q}</div>
-                    <div class="q-status">الحالة: <span style="color:${statusColor}">${finalAns}</span></div>
-                    ${hasNote ? `<div class="q-note">📝 ملاحظة: ${violationData.note}</div>` : ''}
+            allItemsHTML += `
+                <div class="item-wrapper observation-card ${statusClass}">
+                    <div style="display:flex; justify-content:space-between; align-items:start;">
+                        <div class="q-title">${i+1}. ${q}</div>
+                        <div class="q-ans-badge" style="color:${ansColor}; background:${ansBg}">${finalAns}</div>
+                    </div>
+                    ${hasNote ? `<div class="q-note">📝 ${violationData.note}</div>` : ''}
                     ${photosHTML}
                 </div>
             `;
         } else {
-            // بنود عادية (جدول مختصر)
-            let rowColor = finalAns === 'نعم' ? '#16a34a' : '#64748b';
-            simpleItemsRows += `
-                <tr>
-                    <td style="width:30px; text-align:center; color:#999;">${i+1}</td>
-                    <td>${q}</td>
-                    <td style="width:80px; font-weight:bold; color:${rowColor}; text-align:center;">${finalAns}</td>
-                </tr>
+            // شريط صغير (للبنود السليمة أو N/A بدون صور)
+            allItemsHTML += `
+                <div class="item-wrapper simple-strip ${statusClass}">
+                    <div style="font-weight:600; color:#334155;">${i+1}. ${q}</div>
+                    <div class="q-ans-badge" style="color:${ansColor}; background:${ansBg}">${finalAns}</div>
+                </div>
             `;
         }
     });
 
-    // بناء محتوى التقرير
+    // محتوى التقرير النهائي
     const content = `
       ${pdfStyles}
       <div style="padding:15px; max-width: 100%;">
@@ -384,21 +393,13 @@ const AdminDashboard = () => {
              </div>
         </div>
 
-        ${detailedItemsHTML ? `
-            <h3 style="color:#005a8f; margin-top:25px; border-bottom:2px solid #eee; padding-bottom:5px;">📸 الملاحظات الميدانية والتوثيق</h3>
-            <div style="margin-top:15px;">
-                ${detailedItemsHTML}
-            </div>
-        ` : ''}
+        <h3 style="color:#005a8f; border-bottom:2px solid #eee; padding-bottom:5px; margin-bottom:15px; font-size:16px;">
+            📋 قائمة الفحص والتوثيق (${fullQuestionsList.length} بند)
+        </h3>
 
-        ${simpleItemsRows ? `
-            <div style="page-break-inside: avoid;">
-                <h3 style="background:#005a8f; color:white; padding:8px; border-radius:4px; margin-top:30px; font-size:14px;">✅ قائمة الفحص السريع</h3>
-                <table>
-                    <tbody>${simpleItemsRows}</tbody>
-                </table>
-            </div>
-        ` : ''}
+        <div style="margin-top:10px;">
+            ${allItemsHTML}
+        </div>
 
         <div class="footer">
             <div style="text-align:center;">
@@ -408,7 +409,7 @@ const AdminDashboard = () => {
             ${r.signature_image ? `
             <div style="text-align:center;">
                 <p style="margin-bottom:5px; font-weight:bold; color:#005a8f;">توقيع المستلم</p>
-                <img src="${r.signature_image}" style="height:70px; border-bottom:1px solid #ccc;">
+                <img src="${r.signature_image}" style="height:60px;">
             </div>` : ''}
         </div>
       </div>
@@ -416,7 +417,7 @@ const AdminDashboard = () => {
 
     container.innerHTML = content
 
-    // إعدادات التصدير لملف PDF
+    // إعدادات التصدير
     const opt = {
       margin:       [10, 10, 10, 10],
       filename:     `Report_${r.contractor}_${r.serial}.pdf`,
