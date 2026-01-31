@@ -52,14 +52,14 @@ const InspectorApp = () => {
   const sigPad = useRef(null)
   const topRef = useRef(null)
   const sigContainerRef = useRef(null)
-  const warningRef = useRef(null) // مرجع للتعهد
+  const warningRef = useRef(null)
 
   // States
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(false)
   const [btnText, setBtnText] = useState('إعتماد وإرسال التقرير')
   
-  // New State for Acknowledgement (التعهد)
+  // حالة التعهد (صح/خطأ)
   const [isAcknowledged, setIsAcknowledged] = useState(false)
 
   // Form Data
@@ -100,12 +100,13 @@ const InspectorApp = () => {
     .main-title { text-align: center; margin: 0 0 5px 0; color: #0f172a; font-size: 20px; font-weight: 800; }
     .premium-card { background: var(--card-bg); border-radius: var(--border-radius); padding: 20px; margin: 15px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03); border: 1px solid #e2e8f0; }
     
-    /* ستايل التعهد الجديد */
+    /* --- ستايل التعهد --- */
     .warning-card {
         background: #fef2f2;
         border: 2px solid #ef4444;
         box-shadow: 0 4px 15px rgba(239, 68, 68, 0.15);
         animation: pulse-border 2s infinite;
+        margin-top: 30px; /* مسافة إضافية قبل التوقيع */
     }
     @keyframes pulse-border {
         0% { border-color: #ef4444; }
@@ -159,6 +160,7 @@ const InspectorApp = () => {
         font-size: 14px;
         user-select: none;
     }
+    /* ---------------- */
 
     .section-title { font-size: 18px; font-weight: 700; color: var(--primary); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; }
     .verify-item { background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 12px; padding: 20px; text-align: center; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; }
@@ -267,9 +269,9 @@ const InspectorApp = () => {
   }
 
   const handleSubmit = async () => {
-    // --- 1. التحقق من التعهد أولاً ---
+    // --- 1. التحقق من التعهد (إجباري) ---
     if (!isAcknowledged) {
-        alert('⛔ تنبيه هام: يجب قراءة التحذير في أعلى الصفحة والموافقة عليه قبل إرسال التقرير.');
+        alert('⛔ يجب الموافقة على التعهد الموجود أعلى خانة التوقيع قبل الإرسال.');
         warningRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
         return;
     }
@@ -376,27 +378,6 @@ const InspectorApp = () => {
         <h2 className="main-title">مجموعة السلامة ادارة ضواحي الرياض</h2>
         <p style={{margin: '0 0 20px 0', color: '#64748b', fontSize: '14px', textAlign:'center'}}><i className="fa-regular fa-calendar"></i> {new Date().toLocaleDateString('ar-SA')}</p>
 
-        {/* --- قسم التحذير الإجباري الجديد --- */}
-        <div className="premium-card warning-card" ref={warningRef}>
-            <div className="warning-title">
-                <i className="fa-solid fa-triangle-exclamation fa-beat" style={{color:'#ef4444'}}></i>
-                تنبيه وإقرار هام
-            </div>
-            <div className="warning-text">
-                نؤكد بشكل قاطع أن دورك كمهندس مشرف لا يقتصر على رصد الملاحظات وإعداد التقارير فقط، بل يشمل المتابعة المباشرة والفعلية للأخطاء التي تم رصدها، والتأكد من تصحيحها فورًا، واتخاذ الإجراءات اللازمة لضمان عدم تكرارها مستقبلًا، مع تحمل المسؤولية النظامية كاملة حيال أي تقصير في ذلك.
-            </div>
-            <label className="ack-label">
-                <input 
-                    type="checkbox" 
-                    className="ack-checkbox"
-                    checked={isAcknowledged}
-                    onChange={(e) => setIsAcknowledged(e.target.checked)}
-                />
-                <span className="ack-text-label">أقر بأنني قرأت وفهمت وألتزم بما ورد أعلاه</span>
-            </label>
-        </div>
-        {/* ---------------------------------- */}
-
         <div className="premium-card">
           <div className="section-title"><i className="fa-solid fa-location-dot"></i>إثبات الموقع</div>
           <div className={`verify-item ${geo ? 'done' : ''}`} onClick={getGeo}>
@@ -458,6 +439,27 @@ const InspectorApp = () => {
           )
         })}
 
+        {/* --- تم تغيير العنوان إلى "تعهد" هنا --- */}
+        <div className="premium-card warning-card" ref={warningRef}>
+            <div className="warning-title">
+                <i className="fa-solid fa-triangle-exclamation fa-beat" style={{color:'#ef4444'}}></i>
+                تعهد
+            </div>
+            <div className="warning-text">
+                نؤكد بشكل قاطع أن دورك كمهندس مشرف لا يقتصر على رصد الملاحظات وإعداد التقارير فقط، بل يشمل المتابعة المباشرة والفعلية للأخطاء التي تم رصدها، والتأكد من تصحيحها فورًا، واتخاذ الإجراءات اللازمة لضمان عدم تكرارها مستقبلًا، مع تحمل المسؤولية النظامية كاملة حيال أي تقصير في ذلك.
+            </div>
+            <label className="ack-label">
+                <input 
+                    type="checkbox" 
+                    className="ack-checkbox"
+                    checked={isAcknowledged}
+                    onChange={(e) => setIsAcknowledged(e.target.checked)}
+                />
+                <span className="ack-text-label">أقر بأنني قرأت وفهمت وألتزم بما ورد أعلاه</span>
+            </label>
+        </div>
+        {/* -------------------------------------- */}
+
         <div className="premium-card" ref={sigContainerRef}>
           <div className="section-title">
             <i className="fa-solid fa-file-signature"></i>
@@ -475,8 +477,8 @@ const InspectorApp = () => {
         <button 
             className="submit-main-btn" 
             onClick={handleSubmit} 
-            disabled={loading || !isAcknowledged} // تعطيل الزر بصرياً أيضاً
-            title={!isAcknowledged ? "يجب الموافقة على التحذير أعلاه أولاً" : ""}
+            disabled={loading || !isAcknowledged} 
+            title={!isAcknowledged ? "يجب الموافقة على التعهد أعلاه أولاً" : ""}
         >
             {loading ? <i className="fa-solid fa-spinner fa-spin"></i> : <i className="fa-regular fa-paper-plane"></i>} {btnText}
         </button>
