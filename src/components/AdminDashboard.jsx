@@ -222,7 +222,7 @@ const AdminDashboard = () => {
     setShowPassword(prev => ({ ...prev, [username]: !prev[username] }))
   }
 
-  // --- PDF Generation Logic (تحديث: البيانات بالأعلى، الملاحظات بالصور في الوسط، القائمة الكاملة في النهاية) ---
+  // --- PDF Generation Logic (تعديل: منع التقطيع وتلوين البنود) ---
   const generatePDF = (r) => {
     const container = document.createElement('div')
     
@@ -254,7 +254,8 @@ const AdminDashboard = () => {
             border-radius: 6px;
             padding: 10px;
             margin-bottom: 10px;
-            page-break-inside: avoid;
+            page-break-inside: avoid; /* منع القص */
+            break-inside: avoid;
             box-shadow: 0 2px 4px rgba(0,0,0,0.03);
         }
         .q-title { font-weight: 800; font-size: 13px; color: #1e293b; margin-bottom: 5px; }
@@ -263,11 +264,16 @@ const AdminDashboard = () => {
         .evidence-img { width: 48%; height: 160px; object-fit: cover; border-radius: 4px; border: 1px solid #ccc; }
 
         /* القائمة النهائية (الجدول المجمع في النهاية) */
-        .checklist-table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 20px; page-break-inside: auto; }
+        .checklist-table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 20px; }
         .checklist-table th { background: #005a8f; color: white; padding: 8px; text-align: right; font-weight: bold; }
-        .checklist-table td { border-bottom: 1px solid #e2e8f0; padding: 6px; color: #475569; }
-        .checklist-table tr { page-break-inside: avoid; }
-        .status-cell { font-weight: bold; text-align: center; width: 80px; }
+        
+        /* أهم جزء: منع تقطيع الصفوف في الجدول */
+        .checklist-table tr { page-break-inside: avoid !important; break-inside: avoid !important; }
+        .checklist-table td { border-bottom: 1px solid #e2e8f0; padding: 6px; vertical-align: middle; }
+        
+        /* تنسيق عمود الحالة */
+        .status-cell { font-weight: bold; text-align: center; width: 100px; }
+        .status-badge { display: inline-block; width: 100%; padding: 4px 0; border-radius: 4px; font-size: 11px; }
 
         .footer { margin-top: 30px; display: flex; justify-content: space-between; page-break-inside: avoid; border-top: 1px solid #eee; padding-top: 20px; }
       </style>
@@ -322,15 +328,23 @@ const AdminDashboard = () => {
         let finalAns = violationData ? violationData.ans : (normalAns ? (normalAns.val || normalAns) : "لا ينطبق");
         if (finalAns === 'N/A') finalAns = 'لا ينطبق';
 
-        let color = '#64748b'; // رمادي
-        if (finalAns === 'نعم') color = '#16a34a';
-        if (finalAns === 'لا') color = '#dc2626';
+        // تحديد الألوان (خلفية ولون نص)
+        let badgeStyle = '';
+        if (finalAns === 'نعم') {
+            badgeStyle = 'background-color: #dcfce7; color: #166534;'; // أخضر فاتح ونص غامق
+        } else if (finalAns === 'لا') {
+            badgeStyle = 'background-color: #fee2e2; color: #991b1b;'; // أحمر فاتح ونص غامق
+        } else {
+            badgeStyle = 'background-color: #f1f5f9; color: #64748b;'; // رمادي
+        }
 
         fullListRows += `
             <tr>
                 <td style="width:30px; text-align:center; color:#999;">${i+1}</td>
                 <td>${q}</td>
-                <td class="status-cell" style="color:${color}">${finalAns}</td>
+                <td class="status-cell">
+                    <span class="status-badge" style="${badgeStyle}">${finalAns}</span>
+                </td>
             </tr>
         `;
     });
