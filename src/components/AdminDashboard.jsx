@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import html2pdf from 'html2pdf.js'
 import { supabase } from '../supabaseClient'
 
-// قائمة الأسئلة الموحدة (41 بند)
+// قائمة الأسئلة الموحدة
 const fullQuestionsList = [
     "تصريح العمل الأساسي والثانوي متواجد بموقع العمل", 
     "اجتماع ما قبل البدء بالعمل متواجد بموقع العمل", 
@@ -222,7 +222,7 @@ const AdminDashboard = () => {
     setShowPassword(prev => ({ ...prev, [username]: !prev[username] }))
   }
 
-  // --- PDF Generation Logic (تعديل: منع التقطيع وتلوين البنود) ---
+  // --- PDF Generation Logic (المعدل والمحسن) ---
   // --- PDF Generation Logic (صور كاملة + بيانات شاملة) ---
 const generatePDF = (r) => {
     // التأكد من وجود البيانات
