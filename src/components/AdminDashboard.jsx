@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import html2pdf from 'html2pdf.js'
 import { supabase } from '../supabaseClient'
+// لاحظ إضافة .jsx هنا لحل المشكلة
 import { DownloadPDFButton } from './SafetyReportPDF.jsx'
+
 // --- قائمة الأسئلة الموحدة ---
 const fullQuestionsList = [
     "تصريح العمل الأساسي والثانوي متواجد بموقع العمل", 
@@ -66,7 +67,7 @@ const AdminDashboard = () => {
   const [newInspectorPass, setNewInspectorPass] = useState('')
   const [showPassword, setShowPassword] = useState({})
 
-  // --- Styles Injection (ستايل لوحة التحكم - لا يؤثر على PDF) ---
+  // --- Styles Injection ---
   const styles = `
     :root { 
       --main-blue: #005a8f; 
@@ -184,14 +185,6 @@ const AdminDashboard = () => {
   const togglePassVisibility = (username) => {
     setShowPassword(prev => ({ ...prev, [username]: !prev[username] }))
   }
-
-  // ==========================================================
-  // === PDF GENERATION LOGIC (المعدل كلياً: صور كبيرة وواضحة) ===
-  // ==========================================================
-  // ==========================================================
-// === PDF GENERATION (ENTERPRISE / NO CUT / NO LOSS) =======
-// ==========================================================
-
 
   // --- Filtering ---
   const filteredReports = reports.filter(r => 
