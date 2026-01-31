@@ -191,89 +191,7 @@ const AdminDashboard = () => {
   // ==========================================================
 // === PDF GENERATION (ENTERPRISE / NO CUT / NO LOSS) =======
 // ==========================================================
-const generatePDF = async (r) => {
-  if (!r) return alert("لا توجد بيانات")
 
-  const container = document.createElement("div")
-  container.style.width = "210mm"
-  container.style.background = "#fff"
-
-  const getColor = (v) =>
-    v === "نعم" ? "#15803d" : v === "لا" ? "#b91c1c" : "#475569"
-
-  const rows = fullQuestionsList.map((q, i) => {
-    const violation = r.violations?.find(v => v.q === q)
-    const raw = violation ? violation.ans : r.answers?.[i + 1]
-    const answer = raw?.val || raw || "لا ينطبق"
-    const note = violation?.note || ""
-    const photos = violation?.photos || (violation?.photo ? [violation.photo] : [])
-
-    return { i: i + 1, q, answer, note, photos }
-  })
-
-  container.innerHTML = `
-  <style>
-    body{font-family:Cairo;direction:rtl}
-    img{width:100%;height:auto;object-fit:contain}
-    .card{border:2px solid #e5e7eb;border-radius:12px;padding:20px;margin-bottom:30px;page-break-inside:avoid}
-    .photos{display:grid;grid-template-columns:1fr 1fr;gap:15px}
-    table{width:100%;border-collapse:collapse;margin-top:40px}
-    th,td{border:1px solid #000;padding:8px;font-size:13px}
-    th{background:#1e3a8a;color:#fff}
-  </style>
-
-  <h1 style="text-align:center;color:#1e3a8a">
-    تقرير السلامة والصحة المهنية
-  </h1>
-
-  ${rows.map(rw => `
-    <div class="card">
-      <b>#${rw.i} - ${rw.q}</b>
-      <div style="font-weight:bold;color:${getColor(rw.answer)}">${rw.answer}</div>
-      ${rw.note ? `<div>📝 ${rw.note}</div>` : ""}
-      ${rw.photos.length ? `
-        <div class="photos">
-          ${rw.photos.map(p => `<img src="${p}" crossorigin="anonymous" />`).join("")}
-        </div>` : ""}
-    </div>
-  `).join("")}
-
-  <table>
-    <thead>
-      <tr><th>#</th><th>البند</th><th>الحالة</th></tr>
-    </thead>
-    <tbody>
-      ${rows.map(rw => `
-        <tr>
-          <td>${rw.i}</td>
-          <td>${rw.q}</td>
-          <td style="color:${getColor(rw.answer)}">${rw.answer}</td>
-        </tr>
-      `).join("")}
-    </tbody>
-  </table>
-  `
-
-  html2pdf().set({
-    margin: 10,
-    filename: `Report_${r.serial}.pdf`,
-    image: { type: "jpeg", quality: 1 },
-    html2canvas: {
-      scale: 3,
-      useCORS: true,
-      scrollY: 0
-    },
-    jsPDF: {
-      unit: "mm",
-      format: "a4",
-      orientation: "portrait"
-    },
-    pagebreak: {
-      mode: ["css"],
-      avoid: ["img", ".card", "tr"]
-    }
-  }).from(container).save()
-}
 
   // --- Filtering ---
   const filteredReports = reports.filter(r => 
@@ -364,9 +282,7 @@ const generatePDF = async (r) => {
                       <button className="btn-action-card btn-view" onClick={() => setExpandedReport(expandedReport === r.id ? null : r.id)}>
                         <i className={`fa-solid ${expandedReport === r.id ? 'fa-chevron-up' : 'fa-eye'}`}></i> التفاصيل
                       </button>
-                      <button className="btn-action-card btn-pdf" onClick={() => generatePDF(r)}>
-                        <i className="fa-solid fa-file-pdf"></i> PDF
-                      </button>
+                      <DownloadPDFButton reportData={r} fullQuestionsList={fullQuestionsList} />
                       <button className="btn-action-card btn-delete" onClick={() => deleteReport(r.id)}>
                         <i className="fa-solid fa-trash"></i>
                       </button>
