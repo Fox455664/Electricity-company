@@ -66,7 +66,7 @@ const AdminDashboard = () => {
   const [newInspectorPass, setNewInspectorPass] = useState('')
   const [showPassword, setShowPassword] = useState({})
 
-  // --- Styles Injection for Dashboard ---
+  // --- Styles Injection ---
   const styles = `
     :root { 
       --main-blue: #005a8f; 
@@ -222,16 +222,17 @@ const AdminDashboard = () => {
     setShowPassword(prev => ({ ...prev, [username]: !prev[username] }))
   }
 
-  // --- PDF Generation Logic (Ultimate: Full Images + All Data + No Cutoff) ---
-  const generatePDF = (r) => {
-    // Check Data
+  // --- PDF Generation Logic (المعدل والمحسن) ---
+  // --- PDF Generation Logic (صور كاملة + بيانات شاملة) ---
+const generatePDF = (r) => {
+    // التأكد من وجود البيانات
     if (!r) { alert("لا توجد بيانات للتقرير"); return; }
 
-    // 1. Create Container (Fixed A4 Width)
+    // 1. إنشاء الحاوية
     const container = document.createElement('div');
-    container.style.width = '210mm'; 
+    container.style.width = '210mm'; // عرض A4 ثابت
     
-    // 2. CSS Styles (Optimized for Printing & Full Images)
+    // 2. تصميم CSS (محسن للصور الكاملة)
     const pdfStyles = `
       <style>
         @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap');
@@ -242,21 +243,19 @@ const AdminDashboard = () => {
             margin: 0; padding: 0;
             background: #fff;
             color: #333;
-            -webkit-print-color-adjust: exact !important; 
-            print-color-adjust: exact !important;
         }
 
-        /* Header */
+        /* تنسيق الرأس */
         .header-section { 
             text-align: center; 
-            border-bottom: 4px solid #1e3a8a; /* Dark Blue */
+            border-bottom: 4px solid #1e3a8a; /* أزرق غامق */
             padding-bottom: 15px; 
             margin-bottom: 25px; 
         }
         .header-title { color: #1e3a8a; font-size: 26px; font-weight: 800; margin: 0; }
         .header-sub { color: #64748b; font-size: 14px; margin-top: 5px; font-weight: 700; }
 
-        /* Info Grid */
+        /* جدول المعلومات الأساسية */
         .info-container {
             display: flex;
             flex-wrap: wrap;
@@ -269,25 +268,25 @@ const AdminDashboard = () => {
         }
         
         .info-box {
-            width: 48%; /* 2 items per row */
+            width: 48%; /* عنصرين في كل صف */
             margin-bottom: 8px;
             border-bottom: 1px dashed #cbd5e1;
             padding-bottom: 5px;
         }
-        .info-box.full-width { width: 100%; } 
+        .info-box.full-width { width: 100%; } /* الوصف يأخذ عرض كامل */
 
         .label { color: #1e3a8a; font-size: 11px; font-weight: bold; display: block; margin-bottom: 2px;}
         .value { color: #000; font-weight: 700; font-size: 13px; line-height: 1.5; }
 
-        /* Observation / Violation Card */
+        /* كارت الملاحظة/المخالفة */
         .observation-card {
             background: #fff;
             border: 1px solid #cbd5e1;
             border-radius: 10px;
             padding: 20px;
-            margin-bottom: 30px; 
+            margin-bottom: 30px; /* مسافة كبيرة بين الكروت */
             box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-            page-break-inside: avoid !important; /* Prevent cutting inside card */
+            page-break-inside: avoid !important; /* ممنوع التقطيع في منتصف الكارت */
         }
 
         .card-header {
@@ -296,7 +295,7 @@ const AdminDashboard = () => {
         }
         .q-text { font-weight: 800; font-size: 15px; color: #1e293b; }
         
-        .status-badge-pdf {
+        .status-badge {
             padding: 6px 15px; border-radius: 20px; font-size: 12px; font-weight: bold; color: #fff;
         }
 
@@ -305,10 +304,10 @@ const AdminDashboard = () => {
             padding: 10px; margin-bottom: 15px; border-radius: 4px; font-size: 12px;
         }
 
-        /* Photos Grid - Solves Half-Eaten Issue */
+        /* تنسيق الصور الجديد - يحل مشكلة القص */
         .photos-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr; /* 2 photos per row */
+            grid-template-columns: 1fr 1fr; /* صورتين بجانب بعض */
             gap: 15px;
             margin-top: 10px;
         }
@@ -321,35 +320,34 @@ const AdminDashboard = () => {
         }
         .evidence-img {
             width: 100%;
-            height: auto !important; /* Key: Auto height to show full image */
-            max-height: 500px; /* Max height limit */
-            object-fit: contain; /* Ensure full image is visible */
+            height: auto !important; /* مهم جداً: الطول يتغير حسب الصورة */
+            max-height: 400px; /* أقصى طول حتى لا تأكل الصفحة */
+            object-fit: contain; /* تظهر الصورة كاملة بدون قص */
             border-radius: 6px;
         }
 
-        /* Full Checklist Table */
+        /* جدول القائمة الكاملة */
         .checklist-section { margin-top: 50px; page-break-before: always; }
         .checklist-table { width: 100%; border-collapse: collapse; font-size: 12px; }
         .checklist-table th { background: #1e3a8a; color: white; padding: 10px; text-align: right; }
         .checklist-table td { border-bottom: 1px solid #e2e8f0; padding: 8px; }
         .checklist-table tr { page-break-inside: avoid; }
-        thead { display: table-header-group; } /* Repeat header on new page */
 
-        /* Footer */
+        /* الفوتر */
         .footer { 
             margin-top: 40px; border-top: 2px solid #333; padding-top: 20px;
             display: flex; justify-content: space-between;
-            page-break-inside: avoid;
         }
       </style>
     `;
 
-    // --- 3. Build Content --- //
+    // --- 3. بناء المحتوى --- //
 
+    // دالة مساعدة للألوان
     const getStatusColor = (ans) => {
-        if(ans === 'نعم') return '#16a34a'; // Green
-        if(ans === 'لا') return '#dc2626'; // Red
-        return '#64748b'; // Grey
+        if(ans === 'نعم') return '#16a34a'; // أخضر
+        if(ans === 'لا') return '#dc2626'; // أحمر
+        return '#64748b'; // رمادي
     };
 
     let observationsHTML = '';
@@ -365,11 +363,11 @@ const AdminDashboard = () => {
         const hasNote = violationData && violationData.note;
         const isDanger = finalAns === 'لا';
 
-        // Display logic: Show if it has photos, notes, or is a danger/violation
+        // عرض فقط العناصر التي بها صور أو ملاحظات أو مخالفات
         if (hasPhotos || hasNote || isDanger) {
             hasObservations = true;
             
-            // Handle Photos
+            // معالجة الصور
             let photosHTML = '';
             let photosArr = [];
             if (violationData?.photos && Array.isArray(violationData.photos)) photosArr = violationData.photos;
@@ -390,7 +388,7 @@ const AdminDashboard = () => {
                 <div class="observation-card">
                     <div class="card-header">
                         <div class="q-text">#${i+1} : ${q}</div>
-                        <span class="status-badge-pdf" style="background:${getStatusColor(finalAns)}">
+                        <span class="status-badge" style="background:${getStatusColor(finalAns)}">
                             ${finalAns}
                         </span>
                     </div>
@@ -407,13 +405,12 @@ const AdminDashboard = () => {
         }
     });
 
-    // Build Full List Table
+    // بناء جدول القائمة الكاملة
     let fullListRows = '';
     fullQuestionsList.forEach((q, i) => {
         const violationData = r.violations?.find(v => v.q === q);
         const normalAns = r.answers && r.answers[i+1];
         let finalAns = violationData ? violationData.ans : (normalAns ? (normalAns.val || normalAns) : "لا ينطبق");
-        if (finalAns === 'N/A') finalAns = 'لا ينطبق';
         
         fullListRows += `
             <tr>
@@ -430,13 +427,13 @@ const AdminDashboard = () => {
       ${pdfStyles}
       <div style="padding: 20px;">
         
-        <!-- Header -->
+        <!-- الهيدر -->
         <div class="header-section">
             <h1 class="header-title">مجموعة السلامة إدارة ضواحي الرياض</h1>
-            <div class="header-sub">International Safety Inspection Report</div>
+            <div class="header-sub">تقرير الفحص الدوري للسلامة والصحة المهنية</div>
         </div>
         
-        <!-- Info Container (All Fields Included) -->
+        <!-- بيانات التقرير (تم إضافة كل الحقول من الصورة) -->
         <div class="info-container">
              <div class="info-box"><span class="label">الموقع (Location)</span><span class="value">${r.location || '-'}</span></div>
              <div class="info-box"><span class="label">التاريخ (Date)</span><span class="value">${r.timestamp || new Date().toLocaleDateString('ar-EG')}</span></div>
@@ -451,27 +448,22 @@ const AdminDashboard = () => {
              
              <div class="info-box"><span class="label">المستلم (Receiver)</span><span class="value">${r.receiver || '-'}</span></div>
              <div class="info-box"><span class="label">المفتش (Inspector)</span><span class="value">${r.inspector || '-'}</span></div>
-             
-             <div class="info-box full-width" style="border:none;">
-                <span class="label">رابط الموقع (GPS)</span>
-                ${r.google_maps_link ? `<a href="${r.google_maps_link}" style="color:#005a8f;">📍 عرض الموقع</a>` : '-'}
-             </div>
         </div>
 
-        <!-- Photos & Observations -->
+        <!-- قسم الصور والملاحظات -->
         ${hasObservations ? `
             <h3 style="color:#1e3a8a; border-bottom:2px solid #bfdbfe; padding-bottom:10px; margin-top:40px;">
                 📷 التوثيق الفوتوغرافي والملاحظات
             </h3>
             ${observationsHTML}
         ` : `
-            <div style="text-align:center; padding:30px; border:2px dashed #16a34a; background:#f0fdf4; border-radius:10px; margin-top:30px;">
-                <h2 style="color:#16a34a; margin:0;">✅ الموقع نظيف</h2>
-                <p style="margin:5px 0 0 0;">لا توجد أي مخالفات أو ملاحظات تم رصدها</p>
+            <div style="text-align:center; padding:30px; border:2px dashed #16a34a; background:#f0fdf4; border-radius:10px;">
+                <h2 style="color:#16a34a;">✅ الموقع نظيف</h2>
+                <p>لا توجد أي مخالفات أو ملاحظات تم رصدها</p>
             </div>
         `}
 
-        <!-- Full Checklist -->
+        <!-- الجدول الكامل -->
         <div class="checklist-section">
             <h3 style="background:#1e3a8a; color:white; padding:10px; margin:0; border-radius: 5px 5px 0 0;">
                 📋 قائمة الفحص الكاملة (Checklist)
@@ -484,7 +476,7 @@ const AdminDashboard = () => {
             </table>
         </div>
 
-        <!-- Footer -->
+        <!-- التوقيعات -->
         <div class="footer">
             <div style="text-align: center;">
                 <div class="label">توقيع المفتش</div>
@@ -493,7 +485,7 @@ const AdminDashboard = () => {
             
             <div style="text-align: center;">
                 <div class="label">توقيع المستلم (${r.receiver || 'المسؤول'})</div>
-                ${r.signature_image ? `<img src="${r.signature_image}" style="height:60px; margin-top:5px; border-bottom:1px solid #ccc;" />` : '<div style="margin-top:20px;">....................</div>'}
+                ${r.signature_image ? `<img src="${r.signature_image}" style="height:60px; margin-top:5px;" />` : '<div style="margin-top:20px;">....................</div>'}
             </div>
         </div>
 
@@ -502,18 +494,18 @@ const AdminDashboard = () => {
 
     container.innerHTML = content;
 
-    // Export Options
+    // إعدادات الطباعة للحفاظ على الجودة وعدم القص
     const opt = {
       margin:       [10, 10, 10, 10],
-      filename:     `Report_${r.contractor || 'Safety'}_${r.serial}.pdf`,
+      filename:     `Report_${r.contractor || 'Safety'}.pdf`,
       image:        { type: 'jpeg', quality: 0.98 },
       html2canvas:  { scale: 2, useCORS: true, scrollY: 0 },
       jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
-      pagebreak:    { mode: ['css', 'legacy'], avoid: ['.observation-card', 'tr', '.info-box', '.header-section'] }
+      pagebreak:    { mode: ['css', 'legacy'], avoid: ['.observation-card', 'tr', '.info-box'] }
     };
 
     html2pdf().set(opt).from(container).save();
-  }
+}
 
   // --- Filtering ---
   const filteredReports = reports.filter(r => 
