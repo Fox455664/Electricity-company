@@ -223,65 +223,123 @@ const AdminDashboard = () => {
   }
 
   // --- PDF Generation Logic (تعديل: منع التقطيع وتلوين البنود) ---
+  // --- PDF Generation Logic (ملونة + فخمة + بدون تقطيع) ---
   const generatePDF = (r) => {
+    // 1. إنشاء الحاوية
     const container = document.createElement('div')
     
-    // إعدادات CSS
+    // 2. تصميم CSS
     const pdfStyles = `
       <style>
         @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap');
-        body { font-family: 'Cairo', sans-serif; direction: rtl; color: #333; -webkit-print-color-adjust: exact; }
         
-        .header-section { text-align: center; border-bottom: 3px solid #f28b00; padding-bottom: 10px; margin-bottom: 15px; }
-        .header-title { color: #005a8f; font-size: 22px; font-weight: 800; margin: 0; }
-        .header-sub { color: #666; font-size: 13px; margin: 5px 0; }
-
-        /* جدول البيانات الأساسي (في الأعلى) */
-        .info-grid { 
-            display: grid; grid-template-columns: 1fr 1fr; gap: 8px; 
-            font-size: 11px; background: #fff; padding: 10px; 
-            border: 1px solid #cbd5e1; border-radius: 8px; margin-bottom: 20px;
+        body { 
+            font-family: 'Cairo', sans-serif; 
+            direction: rtl; 
+            color: #1e293b; 
+            background: #fff;
+            -webkit-print-color-adjust: exact; 
         }
-        .info-cell { display: flex; flex-direction: column; border-bottom: 1px solid #f1f5f9; padding-bottom: 4px; }
-        .info-label { font-weight: bold; color: #005a8f; font-size: 10px; margin-bottom: 2px; }
-        .info-val { font-weight: 600; font-size: 11px; color: #333; }
+        
+        .header-section { 
+            text-align: center; 
+            border-bottom: 4px solid #f28b00; 
+            padding-bottom: 15px; 
+            margin-bottom: 30px; 
+            page-break-inside: avoid;
+        }
+        .header-title { color: #005a8f; font-size: 26px; font-weight: 900; margin: 0; }
+        .header-sub { color: #64748b; font-size: 14px; margin-top: 8px; font-weight: 600; }
 
-        /* قسم الملاحظات (الكروت الكبيرة) */
+        .info-grid { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 15px; 
+            background: #f8fafc; 
+            padding: 20px; 
+            border: 1px solid #e2e8f0; 
+            border-radius: 12px; 
+            margin-bottom: 30px;
+            page-break-inside: avoid; 
+        }
+        .info-cell { display: flex; flex-direction: column; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; }
+        .info-label { font-weight: bold; color: #005a8f; font-size: 11px; margin-bottom: 4px; opacity: 0.8; }
+        .info-val { font-weight: 700; font-size: 13px; color: #333; }
+
+        /* كارت الملاحظة */
         .observation-card {
             background: #fff;
-            border: 1px solid #e2e8f0;
-            border-right: 4px solid #dc2626; /* أحمر للملاحظات */
-            border-radius: 6px;
-            padding: 10px;
-            margin-bottom: 10px;
-            page-break-inside: avoid; /* منع القص */
-            break-inside: avoid;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 25px; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+            page-break-before: auto; 
         }
-        .q-title { font-weight: 800; font-size: 13px; color: #1e293b; margin-bottom: 5px; }
-        .q-note { font-size: 11px; background: #fff1f2; color: #991b1b; padding: 5px; border-radius: 4px; border: 1px dashed #fca5a5; margin-top: 5px; }
-        .photos-container { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
-        .evidence-img { width: 48%; height: 160px; object-fit: cover; border-radius: 4px; border: 1px solid #ccc; }
 
-        /* القائمة النهائية (الجدول المجمع في النهاية) */
-        .checklist-table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 20px; }
-        .checklist-table th { background: #005a8f; color: white; padding: 8px; text-align: right; font-weight: bold; }
+        .q-title { font-weight: 800; font-size: 14px; color: #1e293b; margin-bottom: 0; }
         
-        /* أهم جزء: منع تقطيع الصفوف في الجدول */
-        .checklist-table tr { page-break-inside: avoid !important; break-inside: avoid !important; }
-        .checklist-table td { border-bottom: 1px solid #e2e8f0; padding: 6px; vertical-align: middle; }
-        
-        /* تنسيق عمود الحالة */
-        .status-cell { font-weight: bold; text-align: center; width: 100px; }
-        .status-badge { display: inline-block; width: 100%; padding: 4px 0; border-radius: 4px; font-size: 11px; }
+        .q-note { 
+            font-size: 12px; 
+            background: #fff1f2; 
+            color: #991b1b; 
+            padding: 10px; 
+            border-radius: 6px; 
+            border: 1px solid #fecaca; 
+            margin-top: 10px; 
+            line-height: 1.6;
+        }
 
-        .footer { margin-top: 30px; display: flex; justify-content: space-between; page-break-inside: avoid; border-top: 1px solid #eee; padding-top: 20px; }
+        .photos-container { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px; }
+        
+        .evidence-img { 
+            width: 48%; height: 180px; object-fit: cover; 
+            border-radius: 8px; border: 1px solid #cbd5e1; background-color: #f1f5f9;
+            page-break-inside: avoid; 
+        }
+
+        .checklist-section { margin-top: 40px; page-break-before: always; }
+        
+        .checklist-table { 
+            width: 100%; border-collapse: separate; border-spacing: 0; 
+            font-size: 12px; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;
+        }
+        .checklist-table th { 
+            background: #005a8f; color: white; padding: 12px; 
+            text-align: right; font-weight: bold; border-bottom: 2px solid #004269;
+        }
+        .checklist-table tr { page-break-inside: avoid !important; break-inside: avoid !important; background: #fff; }
+        .checklist-table td { border-bottom: 1px solid #f1f5f9; padding: 10px; vertical-align: middle; }
+        .checklist-table tr:nth-child(even) { background-color: #f8fafc; }
+
+        /* ستايل الحالة */
+        .status-badge { 
+            display: inline-block; padding: 6px 12px; border-radius: 6px; 
+            font-size: 11px; font-weight: 800; text-align: center; min-width: 60px;
+        }
+
+        .footer { 
+            margin-top: 50px; display: flex; justify-content: space-between; 
+            border-top: 2px solid #f1f5f9; padding-top: 30px; page-break-inside: avoid; 
+        }
+        .footer-block { text-align: center; }
+        .footer-title { color: #005a8f; font-weight: bold; margin-bottom: 10px; font-size: 14px; }
       </style>
     `
 
-    // 1. توليد كروت الملاحظات (التي تحتوي على صور أو ملاحظات أو مخالفات فقط)
+    // --- 3. بناء المحتوى --- //
+
     let observationsHTML = '';
     let hasObservations = false;
+
+    // دالة مساعدة لتحديد لون الحالة
+    const getStatusStyle = (ans) => {
+        if (ans === 'نعم') return 'background: #dcfce7; color: #166534; border: 1px solid #bbf7d0;'; // أخضر
+        if (ans === 'لا') return 'background: #fee2e2; color: #991b1b; border: 1px solid #fecaca;'; // أحمر
+        return 'background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0;'; // رمادي
+    };
 
     fullQuestionsList.forEach((q, i) => {
         const violationData = r.violations?.find(v => v.q === q);
@@ -293,7 +351,6 @@ const AdminDashboard = () => {
         const hasNote = violationData && violationData.note;
         const isDanger = finalAns === 'لا';
 
-        // شرط العرض في قسم "الملاحظات المصورة": وجود صورة، أو ملاحظة نصية، أو الإجابة "لا"
         if (hasPhotos || hasNote || isDanger) {
             hasObservations = true;
             let photosHTML = '';
@@ -307,20 +364,25 @@ const AdminDashboard = () => {
                 photosHTML += `</div>`;
             }
 
+            // تحديد لون الحدود للكارت بناء على الحالة
+            let borderStyle = isDanger ? 'border-right: 6px solid #dc2626;' : (finalAns === 'نعم' ? 'border-right: 6px solid #16a34a;' : 'border-right: 6px solid #94a3b8;');
+
             observationsHTML += `
-                <div class="observation-card">
-                    <div style="display:flex; justify-content:space-between;">
-                        <div class="q-title">${i+1}. ${q}</div>
-                        <div style="font-weight:bold; color:${isDanger ? '#dc2626' : '#005a8f'}">${finalAns}</div>
+                <div class="observation-card" style="${borderStyle}">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div class="q-title">#${i+1} - ${q}</div>
+                        <!-- هنا المربع الملون للحالة -->
+                        <div class="status-badge" style="${getStatusStyle(finalAns)}">
+                            ${finalAns}
+                        </div>
                     </div>
-                    ${hasNote ? `<div class="q-note">📝 ${violationData.note}</div>` : ''}
+                    ${hasNote ? `<div class="q-note"><strong>📝 ملاحظة المفتش:</strong><br>${violationData.note}</div>` : ''}
                     ${photosHTML}
                 </div>
             `;
         }
     });
 
-    // 2. توليد الجدول الكامل في النهاية (جميع البنود 1-41)
     let fullListRows = '';
     fullQuestionsList.forEach((q, i) => {
         const violationData = r.violations?.find(v => v.q === q);
@@ -328,82 +390,69 @@ const AdminDashboard = () => {
         let finalAns = violationData ? violationData.ans : (normalAns ? (normalAns.val || normalAns) : "لا ينطبق");
         if (finalAns === 'N/A') finalAns = 'لا ينطبق';
 
-        // تحديد الألوان (خلفية ولون نص)
-        let badgeStyle = '';
-        if (finalAns === 'نعم') {
-            badgeStyle = 'background-color: #dcfce7; color: #166534;'; // أخضر فاتح ونص غامق
-        } else if (finalAns === 'لا') {
-            badgeStyle = 'background-color: #fee2e2; color: #991b1b;'; // أحمر فاتح ونص غامق
-        } else {
-            badgeStyle = 'background-color: #f1f5f9; color: #64748b;'; // رمادي
-        }
-
         fullListRows += `
             <tr>
-                <td style="width:30px; text-align:center; color:#999;">${i+1}</td>
-                <td>${q}</td>
-                <td class="status-cell">
-                    <span class="status-badge" style="${badgeStyle}">${finalAns}</span>
+                <td style="width:40px; text-align:center; color:#64748b; font-weight:bold;">${i+1}</td>
+                <td style="line-height:1.6;">${q}</td>
+                <td style="width:120px; text-align:center;">
+                    <span class="status-badge" style="${getStatusStyle(finalAns)}">${finalAns}</span>
                 </td>
             </tr>
         `;
     });
 
-    // بناء التقرير النهائي
     const content = `
       ${pdfStyles}
-      <div style="padding:15px; max-width: 100%;">
+      <div style="padding:20px; max-width: 100%;">
         
         <div class="header-section">
             <h1 class="header-title">مجموعة السلامة ادارة ضواحي الرياض</h1>
-            <div class="header-sub">تقرير تفتيش سلامة ميداني</div>
+            <div class="header-sub">International Safety Inspection Report</div>
         </div>
         
-        <!-- البيانات كما في الصور (بالأعلى) -->
         <div class="info-grid">
-             <div class="info-cell"><span class="info-label">المقاول</span><span class="info-val">${r.contractor || '-'}</span></div>
+             <div class="info-cell"><span class="info-label">المقاول (Contractor)</span><span class="info-val">${r.contractor || '-'}</span></div>
              <div class="info-cell"><span class="info-label">رقم المقايسة / أمر العمل</span><span class="info-val">${r.work_order_number || r.serial || '-'}</span></div>
              
-             <div class="info-cell" style="grid-column: span 2;"><span class="info-label">وصف العمل</span><span class="info-val">${r.work_desc || '-'}</span></div>
+             <div class="info-cell" style="grid-column: span 2;"><span class="info-label">وصف العمل (Description)</span><span class="info-val">${r.work_desc || '-'}</span></div>
              
-             <div class="info-cell"><span class="info-label">المستلم</span><span class="info-val">${r.receiver || '-'}</span></div>
+             <div class="info-cell"><span class="info-label">المستلم (Receiver)</span><span class="info-val">${r.receiver || '-'}</span></div>
              <div class="info-cell"><span class="info-label">فريق الزيارة</span><span class="info-val">${r.visit_team || '-'}</span></div>
              
              <div class="info-cell"><span class="info-label">الاستشاري</span><span class="info-val">${r.consultant || '-'}</span></div>
-             <div class="info-cell"><span class="info-label">الموقع (الحي/الشارع)</span><span class="info-val">${r.location || '-'}</span></div>
+             <div class="info-cell"><span class="info-label">الموقع (Location)</span><span class="info-val">${r.location || '-'}</span></div>
              
-             <div class="info-cell"><span class="info-label">التاريخ</span><span class="info-val">${r.timestamp}</span></div>
-             <div class="info-cell"><span class="info-label">المفتش</span><span class="info-val">${r.inspector}</span></div>
+             <div class="info-cell"><span class="info-label">التاريخ (Date)</span><span class="info-val">${r.timestamp}</span></div>
+             <div class="info-cell"><span class="info-label">المفتش (Inspector)</span><span class="info-val">${r.inspector}</span></div>
 
              <div class="info-cell" style="grid-column: span 2; border:none;">
-                <span class="info-label">رابط الموقع:</span> 
-                ${r.google_maps_link ? `<a href="${r.google_maps_link}" style="color:#005a8f; font-size:10px;">${r.google_maps_link}</a>` : '-'}
+                <span class="info-label">رابط الموقع الجغرافي (GPS):</span> 
+                ${r.google_maps_link ? `<a href="${r.google_maps_link}" style="color:#005a8f; text-decoration:none; font-weight:bold;">📍 عرض الموقع على الخريطة</a>` : '-'}
              </div>
         </div>
 
-        <!-- قسم الملاحظات الموثقة (في الوسط) -->
         ${hasObservations ? `
-            <h3 style="color:#dc2626; border-bottom:2px solid #fee2e2; padding-bottom:5px; margin-top:20px;">
-                📸 الملاحظات الميدانية والتوثيق
+            <h3 style="color:#b91c1c; border-bottom:2px solid #fee2e2; padding-bottom:10px; margin-top:40px; font-size:18px;">
+                📸 الملاحظات الميدانية والتوثيق الفوتوغرافي
             </h3>
-            <div style="margin-top:10px;">${observationsHTML}</div>
+            <div style="margin-top:20px;">${observationsHTML}</div>
         ` : `
-            <div style="text-align:center; padding:20px; color:#16a34a; border:1px dashed #bbf7d0; background:#f0fdf4; border-radius:8px; margin:20px 0;">
-                ✅ لا توجد ملاحظات أو مخالفات موثقة في هذا التقرير
+            <div style="text-align:center; padding:30px; color:#16a34a; border:2px dashed #bbf7d0; background:#f0fdf4; border-radius:12px; margin:40px 0;">
+                <h3 style="margin:0;">✅ تقرير نظيف</h3>
+                <p style="margin:5px 0 0 0;">لا توجد ملاحظات أو مخالفات موثقة في هذا التقرير</p>
             </div>
         `}
 
-        <!-- القائمة الكاملة (في النهاية) -->
-        <div style="page-break-before: always;">
-            <h3 style="background:#005a8f; color:white; padding:10px; border-radius:4px 4px 0 0; margin-bottom:0; font-size:14px;">
-                ✅ قائمة الفحص السريع (التقرير الكامل)
+        <div class="checklist-section">
+            <h3 style="background:#005a8f; color:white; padding:15px; border-radius:8px 8px 0 0; margin-bottom:0; font-size:16px; text-align:center;">
+                ✅ قائمة الفحص الشاملة (Full Checklist)
             </h3>
             <table class="checklist-table">
                 <thead>
                     <tr>
-                        <th>#</th>
-                        <th>البند</th>
-                        <th>الحالة</th>
+                        <th style="width:50px">#</th>
+                        <th>البند (Item)</th>
+                        <th>الحالة (Status)</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -413,14 +462,15 @@ const AdminDashboard = () => {
         </div>
 
         <div class="footer">
-            <div style="text-align:center;">
-                <p style="margin-bottom:5px; font-weight:bold; color:#005a8f;">المفتش</p>
-                <p>${r.inspector}</p>
+            <div class="footer-block">
+                <div class="footer-title">اسم وتوقيع المفتش</div>
+                <div style="font-weight:bold; font-size:14px;">${r.inspector}</div>
             </div>
             ${r.signature_image ? `
-            <div style="text-align:center;">
-                <p style="margin-bottom:5px; font-weight:bold; color:#005a8f;">توقيع المستلم</p>
-                <img src="${r.signature_image}" style="height:60px;">
+            <div class="footer-block">
+                <div class="footer-title">اسم وتوقيع المستلم</div>
+                <img src="${r.signature_image}" style="height:70px; border-bottom:1px solid #ccc; padding-bottom:5px;">
+                <div style="font-size:12px; margin-top:5px; color:#666;">تم التوقيع رقمياً</div>
             </div>` : ''}
         </div>
       </div>
@@ -429,12 +479,15 @@ const AdminDashboard = () => {
     container.innerHTML = content
 
     const opt = {
-      margin:       [10, 10, 10, 10],
+      margin:       [15, 10, 15, 10], 
       filename:     `Report_${r.contractor}_${r.serial}.pdf`,
-      image:        { type: 'jpeg', quality: 0.98 },
-      html2canvas:  { scale: 2, useCORS: true, scrollY: 0 },
+      image:        { type: 'jpeg', quality: 1.0 }, 
+      html2canvas:  { scale: 2, useCORS: true, scrollY: 0, letterRendering: true },
       jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
-      pagebreak:    { mode: ['css', 'legacy'] }
+      pagebreak:    { 
+          mode: ['css', 'legacy'], 
+          avoid: ['.observation-card', 'tr', '.info-grid', '.header-section', '.footer'] 
+      }
     };
 
     html2pdf().set(opt).from(container).save()
