@@ -462,7 +462,9 @@ const InspectorApp = () => {
         {/* Warning */}
         <div className="premium-card warning-card" ref={warningRef}>
             <div className="warning-title"><i className="fa-solid fa-triangle-exclamation"></i>تعهد</div>
-            <div className="warning-text">نؤكد بشكل قاطع أن دورك كمهندس مشرف يشمل المتابعة المباشرة وتصحيح الأخطاء فوراً.</div>
+            <div className="warning-text">نؤكد بشكل قاطع أن دورك كمهندس مشرف  لا يقتصر على رصد الملاحظات وإعداد التقارير فقط، 
+
+بل يشمل المتابعة المباشرة والفعلية للأخطاء التي تم رصدها، والتأكد من تصحيحها فورًا، واتخاذ الإجراءات اللازمة لضمان عدم تكرارها مستقبلًا، مع تحمل المسؤولية النظامية كاملة حيال أي تقصير في ذلك</div>
             <label className="ack-label">
                 <input type="checkbox" className="ack-checkbox" checked={isAcknowledged} onChange={(e) => setIsAcknowledged(e.target.checked)} />
                 <span className="ack-text-label">أقر بأنني قرأت وفهمت وألتزم بما ورد أعلاه</span>
