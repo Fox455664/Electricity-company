@@ -40,6 +40,7 @@ const qList = [
     "ليات الاوكسي استيلين لا يوجد بها تشققات او تالفة", 
     "سلامة المنظم والعدادات", 
     "وجود شعار المقاول على المركبات والمعدات", 
+    "خطط متعلقة بتصاريح العمل", 
     "خطة المنع من السقوط",
     "خطة الإنقاذ في العمل على المرتفعات", 
     "خطة رفع الأحمال الحرجة", 
@@ -53,14 +54,22 @@ const InspectorApp = () => {
   const topRef = useRef(null)
   const sigContainerRef = useRef(null)
   const warningRef = useRef(null)
+  
+  // Camera Refs
+  const videoRef = useRef(null)
+  const canvasRef = useRef(null)
 
   // States
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(false)
   const [btnText, setBtnText] = useState('إعتماد وإرسال التقرير')
-  
-  // حالة التعهد (صح/خطأ)
   const [isAcknowledged, setIsAcknowledged] = useState(false)
+  
+  // Custom Camera States
+  const [showCamera, setShowCamera] = useState(false)
+  const [currentCameraQ, setCurrentCameraQ] = useState(null)
+  const [cameraStream, setCameraStream] = useState(null)
+  const [tempPhotos, setTempPhotos] = useState([]) // الصور الملتقطة مؤقتاً
 
   // Form Data
   const [formData, setFormData] = useState({
@@ -74,94 +83,25 @@ const InspectorApp = () => {
     date: new Date().toISOString().split('T')[0]
   })
   
-  // Verification (GPS)
   const [geo, setGeo] = useState(null)
-
-  // Answers Store
   const [answers, setAnswers] = useState({})
 
   // --- Styles ---
   const styles = `
-    :root {
-      --primary: #005a8f;
-      --accent: #f28b00;
-      --bg-color: #f8fafc;
-      --card-bg: #ffffff;
-      --text-main: #1e293b;
-      --text-light: #64748b;
-      --success: #10b981;
-      --danger: #ef4444;
-      --border-radius: 16px;
-    }
+    :root { --primary: #005a8f; --accent: #f28b00; --bg-color: #f8fafc; --card-bg: #ffffff; --text-main: #1e293b; --text-light: #64748b; --success: #10b981; --danger: #ef4444; --border-radius: 16px; }
     body { background-color: var(--bg-color); font-family: 'Cairo', sans-serif; margin: 0; padding: 0; }
     .app-container { width: 100%; max-width: 900px; margin: 0 auto; padding-bottom: 120px; }
     .premium-header { background: linear-gradient(135deg, #005a8f 0%, #004269 100%); color: white; padding: 20px; border-radius: 0 0 25px 25px; box-shadow: 0 10px 30px rgba(0, 90, 143, 0.15); position: sticky; top: 0; z-index: 1000; display: flex; justify-content: space-between; align-items: center; }
     .inspector-badge { background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(5px); padding: 8px 16px; border-radius: 50px; font-size: 13px; display: flex; align-items: center; gap: 8px; }
     .main-title { text-align: center; margin: 0 0 5px 0; color: #0f172a; font-size: 20px; font-weight: 800; }
     .premium-card { background: var(--card-bg); border-radius: var(--border-radius); padding: 20px; margin: 15px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03); border: 1px solid #e2e8f0; }
-    
-    /* --- ستايل التعهد --- */
-    .warning-card {
-        background: #fef2f2;
-        border: 2px solid #ef4444;
-        box-shadow: 0 4px 15px rgba(239, 68, 68, 0.15);
-        animation: pulse-border 2s infinite;
-        margin-top: 30px; /* مسافة إضافية قبل التوقيع */
-    }
-    @keyframes pulse-border {
-        0% { border-color: #ef4444; }
-        50% { border-color: #f87171; }
-        100% { border-color: #ef4444; }
-    }
-    .warning-title {
-        color: #b91c1c;
-        font-weight: 900;
-        font-size: 18px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 10px;
-        margin-bottom: 15px;
-    }
-    .warning-text {
-        color: #b91c1c;
-        font-weight: 700;
-        font-size: 15px;
-        line-height: 1.8;
-        text-align: center;
-        margin-bottom: 20px;
-        border-bottom: 1px dashed #fca5a5;
-        padding-bottom: 15px;
-    }
-    .ack-label {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 12px;
-        cursor: pointer;
-        padding: 10px;
-        background: white;
-        border-radius: 10px;
-        border: 1px solid #fca5a5;
-        transition: all 0.3s;
-    }
-    .ack-label:hover {
-        background: #fff1f2;
-    }
-    .ack-checkbox {
-        width: 22px;
-        height: 22px;
-        accent-color: #dc2626;
-        cursor: pointer;
-    }
-    .ack-text-label {
-        font-weight: bold;
-        color: #991b1b;
-        font-size: 14px;
-        user-select: none;
-    }
-    /* ---------------- */
-
+    .warning-card { background: #fef2f2; border: 2px solid #ef4444; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.15); animation: pulse-border 2s infinite; margin-top: 30px; }
+    @keyframes pulse-border { 0% { border-color: #ef4444; } 50% { border-color: #f87171; } 100% { border-color: #ef4444; } }
+    .warning-title { color: #b91c1c; font-weight: 900; font-size: 18px; display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 15px; }
+    .warning-text { color: #b91c1c; font-weight: 700; font-size: 15px; line-height: 1.8; text-align: center; margin-bottom: 20px; border-bottom: 1px dashed #fca5a5; padding-bottom: 15px; }
+    .ack-label { display: flex; align-items: center; justify-content: center; gap: 12px; cursor: pointer; padding: 10px; background: white; border-radius: 10px; border: 1px solid #fca5a5; transition: all 0.3s; }
+    .ack-checkbox { width: 22px; height: 22px; accent-color: #dc2626; cursor: pointer; }
+    .ack-text-label { font-weight: bold; color: #991b1b; font-size: 14px; user-select: none; }
     .section-title { font-size: 18px; font-weight: 700; color: var(--primary); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; }
     .verify-item { background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 12px; padding: 20px; text-align: center; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; }
     .verify-item.done { border-style: solid; border-color: var(--success); background: #ecfdf5; }
@@ -180,7 +120,8 @@ const InspectorApp = () => {
     .option-btn.no.active { background: #ef4444; color: white; }
     .option-btn.na.active { background: #64748b; color: white; }
     .actions-row { display: flex; gap: 10px; margin-top: 15px; }
-    .action-btn { flex: 1; border: 1px dashed #cbd5e1; padding: 10px; border-radius: 8px; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; background: #f8fafc; color: var(--text-main); }
+    .action-btn { flex: 1; border: 1px dashed #cbd5e1; padding: 10px; border-radius: 8px; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; background: #f8fafc; color: var(--text-main); transition:0.2s; }
+    .action-btn:active { background: #e2e8f0; transform: scale(0.98); }
     .img-grid { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
     .img-thumb { width: 60px; height: 60px; border-radius: 8px; object-fit: cover; border: 2px solid #e2e8f0; position: relative; }
     .del-btn { position: absolute; top: -5px; right: -5px; background: #ef4444; color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 12px; cursor: pointer; border: none; }
@@ -189,31 +130,135 @@ const InspectorApp = () => {
     .submit-main-btn { background: linear-gradient(135deg, var(--accent) 0%, #e67e00 100%); color: white; border: none; padding: 16px 40px; border-radius: 50px; font-weight: 700; font-size: 16px; width: 100%; box-shadow: 0 4px 15px rgba(242, 139, 0, 0.4); cursor: pointer; font-family: 'Cairo', sans-serif; transition: all 0.3s; }
     .submit-main-btn:disabled { background: #cbd5e1; cursor: not-allowed; box-shadow: none; opacity: 0.7; }
     .sig-canvas { width: 100% !important; height: 200px !important; border-radius: 8px; }
+
+    /* --- Custom Camera Modal Styles --- */
+    .camera-modal {
+      position: fixed; inset: 0; background: black; z-index: 9999;
+      display: flex; flex-direction: column;
+    }
+    .camera-video {
+      width: 100%; height: 100%; object-fit: cover; flex: 1;
+    }
+    .camera-controls {
+      position: absolute; bottom: 20px; left: 0; right: 0;
+      display: flex; justify-content: space-around; align-items: center;
+      padding: 20px;
+    }
+    .snap-btn {
+      width: 70px; height: 70px; border-radius: 50%;
+      background: white; border: 4px solid #ccc;
+      cursor: pointer;
+    }
+    .snap-btn:active { transform: scale(0.95); background: #eee; }
+    
+    .done-btn-cam {
+      background: #10b981; color: white; padding: 10px 20px; border-radius: 30px; border:none; font-weight:bold; cursor:pointer;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    }
+    .close-btn-cam {
+      background: rgba(255,255,255,0.2); color: white; padding: 10px 20px; border-radius: 30px; border:none; cursor:pointer;
+      backdrop-filter: blur(4px);
+    }
+    .camera-counter {
+      position: absolute; top: 20px; left: 20px;
+      background: rgba(0,0,0,0.6); color: white; padding: 5px 15px; border-radius: 20px;
+      font-weight: bold; font-size: 14px;
+    }
+    .temp-thumbs {
+      position: absolute; bottom: 100px; left: 0; right: 0;
+      display: flex; gap: 10px; padding: 10px; overflow-x: auto;
+      background: rgba(0,0,0,0.3);
+    }
+    .temp-img { width: 50px; height: 50px; border-radius: 6px; border: 2px solid white; object-fit: cover; }
   `;
 
-  // --- Auth Check ---
   useEffect(() => {
     const userData = sessionStorage.getItem('user')
-    if (!userData) {
-      navigate('/')
-    } else {
-      setUser(JSON.parse(userData))
-    }
+    if (!userData) { navigate('/') } else { setUser(JSON.parse(userData)) }
   }, [])
 
   // --- Helpers ---
   const getGeo = () => {
-    if (!navigator.geolocation) {
-      alert('المتصفح لا يدعم تحديد الموقع')
-      return
-    }
+    if (!navigator.geolocation) return alert('المتصفح لا يدعم GPS')
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const link = `https://maps.google.com/?q=${pos.coords.latitude},${pos.coords.longitude}`
-        setGeo(link)
-      },
-      () => alert('فشل تحديد الموقع. تأكد من تفعيل GPS')
+      (pos) => setGeo(`https://maps.google.com/?q=${pos.coords.latitude},${pos.coords.longitude}`),
+      () => alert('فشل تحديد الموقع')
     )
+  }
+
+  // --- Custom Camera Logic ---
+  const startCamera = async (qIndex) => {
+    try {
+      setCurrentCameraQ(qIndex)
+      setTempPhotos([])
+      setShowCamera(true)
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'environment' } 
+      })
+      setCameraStream(stream)
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream
+      }
+    } catch (err) {
+      alert('لا يمكن فتح الكاميرا: ' + err.message)
+      setShowCamera(false)
+    }
+  }
+
+  const stopCamera = () => {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(track => track.stop())
+    }
+    setShowCamera(false)
+    setCameraStream(null)
+  }
+
+  const takeSnap = () => {
+    if (videoRef.current && canvasRef.current) {
+      const vid = videoRef.current
+      const canvas = canvasRef.current
+      canvas.width = vid.videoWidth
+      canvas.height = vid.videoHeight
+      const ctx = canvas.getContext('2d')
+      ctx.drawImage(vid, 0, 0, canvas.width, canvas.height)
+      
+      canvas.toBlob((blob) => {
+        const file = new File([blob], `snap_${Date.now()}.jpg`, { type: 'image/jpeg' })
+        setTempPhotos(prev => [...prev, file])
+      }, 'image/jpeg', 0.8)
+    }
+  }
+
+  const savePhotosFromCamera = () => {
+    if (tempPhotos.length > 0) {
+      handleAddPhoto(currentCameraQ, tempPhotos)
+    }
+    stopCamera()
+  }
+
+  // --- Handling Answers ---
+  const handleAnswerChange = (qIndex, field, value) => {
+    setAnswers(prev => ({ ...prev, [qIndex]: { ...prev[qIndex], [field]: value } }))
+  }
+
+  const handleAddPhoto = (qIndex, newFiles) => {
+      if (!newFiles || newFiles.length === 0) return;
+      const fileArray = Array.from(newFiles);
+      setAnswers(prev => {
+          const existingFiles = prev[qIndex]?.files || [];
+          return {
+              ...prev,
+              [qIndex]: { ...prev[qIndex], files: [...existingFiles, ...fileArray] }
+          }
+      });
+  }
+
+  const removePhoto = (qIndex, fileIdx) => {
+      setAnswers(prev => {
+          const files = [...(prev[qIndex]?.files || [])];
+          files.splice(fileIdx, 1);
+          return { ...prev, [qIndex]: { ...prev[qIndex], files } }
+      });
   }
 
   // --- Image Compression ---
@@ -238,55 +283,19 @@ const InspectorApp = () => {
     })
   }
 
-  const handleAnswerChange = (qIndex, field, value) => {
-    setAnswers(prev => ({
-      ...prev,
-      [qIndex]: { ...prev[qIndex], [field]: value }
-    }))
-  }
-
-  const handleAddPhoto = (qIndex, newFiles) => {
-      if (!newFiles || newFiles.length === 0) return;
-      const fileArray = Array.from(newFiles);
-      setAnswers(prev => {
-          const existingFiles = prev[qIndex]?.files || [];
-          return {
-              ...prev,
-              [qIndex]: { ...prev[qIndex], files: [...existingFiles, ...fileArray] }
-          }
-      });
-  }
-
-  const removePhoto = (qIndex, fileIdx) => {
-      setAnswers(prev => {
-          const files = [...(prev[qIndex]?.files || [])];
-          files.splice(fileIdx, 1);
-          return {
-              ...prev,
-              [qIndex]: { ...prev[qIndex], files }
-          }
-      });
-  }
-
+  // --- Submission ---
   const handleSubmit = async () => {
-    // --- 1. التحقق من التعهد (إجباري) ---
     if (!isAcknowledged) {
-        alert('⛔ يجب الموافقة على التعهد الموجود أعلى خانة التوقيع قبل الإرسال.');
+        alert('⛔ يجب الموافقة على التعهد.');
         warningRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
         return;
     }
-
-    if (!geo) { alert('⚠️ يرجى تحديد الموقع أولاً'); topRef.current?.scrollIntoView({ behavior: 'smooth' }); return; }
-    if (!formData.contractor) { alert('⚠️ يرجى كتابة اسم المقاول'); topRef.current?.scrollIntoView({ behavior: 'smooth' }); return; }
-    
-    if (sigPad.current.isEmpty()) {
-        alert('⚠️ يجب توقيع المستلم قبل إرسال التقرير');
-        sigContainerRef.current?.scrollIntoView({ behavior: 'smooth' });
-        return;
-    }
+    if (!geo) { alert('⚠️ يرجى تحديد الموقع'); topRef.current?.scrollIntoView(); return; }
+    if (!formData.contractor) { alert('⚠️ اسم المقاول مطلوب'); topRef.current?.scrollIntoView(); return; }
+    if (sigPad.current.isEmpty()) { alert('⚠️ التوقيع مطلوب'); sigContainerRef.current?.scrollIntoView(); return; }
 
     setLoading(true)
-    setBtnText('جاري ضغط الصور والمعالجة...')
+    setBtnText('جاري المعالجة...')
 
     try {
       const serial = Date.now()
@@ -305,123 +314,134 @@ const InspectorApp = () => {
         const qKey = i + 1
         const currentAns = answers[qKey] || {}
         const val = currentAns.val || 'N/A'
-        const note = currentAns.note || ''
         
         payload.answers[qKey] = val === 'N/A' ? 'لا ينطبق' : val
 
         let processedPhotos = []
         if (currentAns.files && currentAns.files.length > 0) {
-            setBtnText(`جاري رفع ${currentAns.files.length} صور للبند ${qKey}...`)
+            setBtnText(`رفع صور بند ${qKey}...`)
             for (const file of currentAns.files) {
-                try {
-                    const compressed = await compressImage(file);
-                    processedPhotos.push(compressed);
-                } catch (e) { console.error("Compression error", e); }
+                const compressed = await compressImage(file);
+                processedPhotos.push(compressed);
             }
         }
 
-        if (val === 'لا' || note || processedPhotos.length > 0) {
+        if (val === 'لا' || currentAns.note || processedPhotos.length > 0) {
           payload.violations.push({
             q: qList[i],
             ans: val === 'N/A' ? 'لا ينطبق' : val,
-            note,
+            note: currentAns.note || '',
             photos: processedPhotos
           })
         }
       }
 
-      setBtnText('جاري إرسال البيانات للسيرفر...')
-      
-      const jsonString = JSON.stringify(payload);
-      if ((jsonString.length / 1024 / 1024) > 5.5) {
-          throw new Error("حجم الصور كبير جداً، يرجى تقليل عدد الصور أو جودتها");
-      }
-
+      setBtnText('إرسال...')
       const { error } = await supabase.from('reports').insert([payload])
       if (error) throw error
 
-      alert('✅ تم إرسال التقرير بنجاح!')
+      alert('✅ تم الإرسال بنجاح!')
       window.location.reload()
 
     } catch (err) {
-      console.error(err)
-      alert('خطأ في الإرسال: ' + err.message)
-      setBtnText('إعادة المحاولة')
+      alert('خطأ: ' + err.message)
     } finally {
       setLoading(false)
+      setBtnText('إعتماد وإرسال التقرير')
     }
   }
 
-  if (!user) return <div style={{display:'flex', justifyContent:'center', alignItems:'center', height:'100vh', fontFamily:'Cairo'}}>جاري تحميل النظام...</div>
+  if (!user) return <div style={{display:'flex', justifyContent:'center', alignItems:'center', height:'100vh', fontFamily:'Cairo'}}>تحميل...</div>
 
   return (
     <div className="app-container">
       <style>{styles}</style>
       
+      {/* --- Custom Camera Overlay --- */}
+      {showCamera && (
+        <div className="camera-modal">
+          <video ref={videoRef} autoPlay playsInline className="camera-video"></video>
+          <canvas ref={canvasRef} style={{display:'none'}}></canvas>
+          
+          <div className="camera-counter">الصور الملتقطة: {tempPhotos.length}</div>
+          
+          {tempPhotos.length > 0 && (
+            <div className="temp-thumbs">
+              {tempPhotos.map((f, i) => <img key={i} src={URL.createObjectURL(f)} className="temp-img" alt="" />)}
+            </div>
+          )}
+
+          <div className="camera-controls">
+            <button className="close-btn-cam" onClick={stopCamera}>إلغاء</button>
+            <button className="snap-btn" onClick={takeSnap}></button>
+            <button className="done-btn-cam" onClick={savePhotosFromCamera}>
+              إتمام <i className="fa-solid fa-check"></i>
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="premium-header" ref={topRef}>
         <div className="inspector-badge"><i className="fa-solid fa-user-shield"></i><span>{user.username}</span></div>
         <div style={{display:'flex', gap:'15px', alignItems:'center'}}>
             {user.role === 'admin' && (
-                <button 
-                    onClick={() => navigate('/admin')} 
-                    style={{background:'rgba(255,255,255,0.2)', border:'1px solid rgba(255,255,255,0.4)', borderRadius:'8px', color:'white', padding:'5px 10px', cursor:'pointer', fontSize:'14px'}}
-                >
+                <button onClick={() => navigate('/admin')} style={{background:'rgba(255,255,255,0.2)', border:'1px solid rgba(255,255,255,0.4)', borderRadius:'8px', color:'white', padding:'5px 10px', fontSize:'14px'}}>
                     <i className="fa-solid fa-chart-line"></i> مدير
                 </button>
             )}
-            <button onClick={() => { sessionStorage.clear(); navigate('/'); }} style={{background:'none', border:'none', color:'rgba(255,255,255,0.7)', cursor:'pointer', fontSize:'18px'}}><i className="fa-solid fa-arrow-right-from-bracket"></i></button>
+            <button onClick={() => { sessionStorage.clear(); navigate('/'); }} style={{background:'none', border:'none', color:'rgba(255,255,255,0.7)', fontSize:'18px'}}><i className="fa-solid fa-arrow-right-from-bracket"></i></button>
         </div>
       </div>
 
       <div style={{padding: '20px 15px'}}>
         <h2 className="main-title">مجموعة السلامة ادارة ضواحي الرياض</h2>
-        <p style={{margin: '0 0 20px 0', color: '#64748b', fontSize: '14px', textAlign:'center'}}><i className="fa-regular fa-calendar"></i> {new Date().toLocaleDateString('ar-SA')}</p>
-
+        
+        {/* GPS Section */}
         <div className="premium-card">
           <div className="section-title"><i className="fa-solid fa-location-dot"></i>إثبات الموقع</div>
           <div className={`verify-item ${geo ? 'done' : ''}`} onClick={getGeo}>
             <i className={`fa-solid ${geo ? 'fa-map-location-dot' : 'fa-location-crosshairs'} verify-icon`}></i>
-            <div style={{fontWeight:'bold', fontSize:'14px'}}>{geo ? 'تم تحديد الموقع' : 'تحديد الموقع GPS'}</div>
-             <div style={{fontSize:'11px', color:'#94a3b8', marginTop:'5px'}}>{geo ? 'إحداثيات دقيقة ✅' : 'اضغط لتفعيل GPS'}</div>
+            <div style={{fontWeight:'bold'}}>{geo ? 'تم تحديد الموقع' : 'تحديد الموقع GPS'}</div>
           </div>
         </div>
 
+        {/* Info Section */}
         <div className="premium-card">
           <div className="section-title"><i className="fa-solid fa-file-contract"></i>بيانات التقرير</div>
-          <div className="input-wrapper"><label className="input-label">موقع العمل (الحي / الشارع)</label><input className="premium-input" placeholder="الحي / الشارع..." value={formData.location} onChange={(e) => setFormData({...formData, location: e.target.value})} /><i className="fa-solid fa-map-pin input-icon"></i></div>
-          <div className="input-wrapper"><label className="input-label">فريق الزيارة</label><input className="premium-input" placeholder="اسماء فريق الزيارة..." value={formData.visit_team} onChange={(e) => setFormData({...formData, visit_team: e.target.value})} /><i className="fa-solid fa-users input-icon"></i></div>
-          <div className="input-wrapper"><label className="input-label">اسم الاستشاري</label><input className="premium-input" placeholder="اسم الاستشاري..." value={formData.consultant} onChange={(e) => setFormData({...formData, consultant: e.target.value})} /><i className="fa-solid fa-user-tie input-icon"></i></div>
-          <div className="input-wrapper"><label className="input-label">اسم المقاول</label><input className="premium-input" placeholder="اكتب اسم الشركة المنفذة..." value={formData.contractor} onChange={(e) => setFormData({...formData, contractor: e.target.value})} /><i className="fa-solid fa-hard-hat input-icon"></i></div>
-          <div className="input-wrapper"><label className="input-label">رقم المقايسة / أمر العمل</label><input className="premium-input" placeholder="رقم أمر العمل..." value={formData.order_number} onChange={(e) => setFormData({...formData, order_number: e.target.value})} /><i className="fa-solid fa-file-invoice input-icon"></i></div>
-          <div className="input-wrapper"><label className="input-label">وصف العمل</label><input className="premium-input" placeholder="صيانة / تركيب / حفر..." value={formData.work_desc} onChange={(e) => setFormData({...formData, work_desc: e.target.value})} /><i className="fa-solid fa-briefcase input-icon"></i></div>
-          <div className="input-wrapper"><label className="input-label">المستلم</label><input className="premium-input" placeholder="اسم مستلم العمل..." value={formData.receiver} onChange={(e) => setFormData({...formData, receiver: e.target.value})} /><i className="fa-solid fa-user-check input-icon"></i></div>
+          <div className="input-wrapper"><label className="input-label">موقع العمل (الحي / الشارع)</label><input className="premium-input" value={formData.location} onChange={(e) => setFormData({...formData, location: e.target.value})} /><i className="fa-solid fa-map-pin input-icon"></i></div>
+          <div className="input-wrapper"><label className="input-label">فريق الزيارة</label><input className="premium-input" value={formData.visit_team} onChange={(e) => setFormData({...formData, visit_team: e.target.value})} /><i className="fa-solid fa-users input-icon"></i></div>
+          <div className="input-wrapper"><label className="input-label">اسم الاستشاري</label><input className="premium-input" value={formData.consultant} onChange={(e) => setFormData({...formData, consultant: e.target.value})} /><i className="fa-solid fa-user-tie input-icon"></i></div>
+          <div className="input-wrapper"><label className="input-label">اسم المقاول</label><input className="premium-input" value={formData.contractor} onChange={(e) => setFormData({...formData, contractor: e.target.value})} /><i className="fa-solid fa-hard-hat input-icon"></i></div>
+          <div className="input-wrapper"><label className="input-label">رقم المقايسة / أمر العمل</label><input className="premium-input" value={formData.order_number} onChange={(e) => setFormData({...formData, order_number: e.target.value})} /><i className="fa-solid fa-file-invoice input-icon"></i></div>
+          <div className="input-wrapper"><label className="input-label">وصف العمل</label><input className="premium-input" value={formData.work_desc} onChange={(e) => setFormData({...formData, work_desc: e.target.value})} /><i className="fa-solid fa-briefcase input-icon"></i></div>
+          <div className="input-wrapper"><label className="input-label">المستلم</label><input className="premium-input" value={formData.receiver} onChange={(e) => setFormData({...formData, receiver: e.target.value})} /><i className="fa-solid fa-user-check input-icon"></i></div>
         </div>
 
-        <h3 style={{margin:'20px 15px 10px', color:'#0f172a', textAlign:'right'}}>قائمة الفحص</h3>
+        {/* Questions */}
+        <h3 style={{margin:'20px 15px 10px', textAlign:'right'}}>قائمة الفحص</h3>
         {qList.map((q, i) => {
           const qIdx = i + 1
           const currentVal = answers[qIdx]?.val || 'N/A'
-          const isAnswered = answers[qIdx]?.val && answers[qIdx]?.val !== 'N/A'
           const currentFiles = answers[qIdx]?.files || []
+          const isAnswered = answers[qIdx]?.val && answers[qIdx]?.val !== 'N/A'
 
           return (
             <div key={i} className={`question-card ${isAnswered ? 'answered' : ''}`}>
               <div className="q-text">{qIdx}. {q}</div>
               
               <div className="options-container">
-                <div className={`option-btn yes ${currentVal === 'نعم' ? 'active' : ''}`} onClick={() => handleAnswerChange(qIdx, 'val', 'نعم')}><i className="fa-solid fa-check"></i> نعم</div>
-                <div className={`option-btn no ${currentVal === 'لا' ? 'active' : ''}`} onClick={() => handleAnswerChange(qIdx, 'val', 'لا')}><i className="fa-solid fa-xmark"></i> لا</div>
+                <div className={`option-btn yes ${currentVal === 'نعم' ? 'active' : ''}`} onClick={() => handleAnswerChange(qIdx, 'val', 'نعم')}>نعم</div>
+                <div className={`option-btn no ${currentVal === 'لا' ? 'active' : ''}`} onClick={() => handleAnswerChange(qIdx, 'val', 'لا')}>لا</div>
                 <div className={`option-btn na ${currentVal === 'N/A' ? 'active' : ''}`} onClick={() => handleAnswerChange(qIdx, 'val', 'N/A')}>لا ينطبق</div>
               </div>
 
               <div className="actions-row">
-                  <div className="action-btn" onClick={() => document.getElementById(`cam-${qIdx}`).click()}>
-                    <i className="fa-solid fa-camera" style={{color:'var(--primary)'}}></i>التقاط صورة
+                  {/* زر الكاميرا الخاصة فقط */}
+                  <div className="action-btn" onClick={() => startCamera(qIdx)}>
+                    <i className="fa-solid fa-camera" style={{color:'var(--primary)'}}></i> تصوير متعدد
                   </div>
               </div>
-
-              <input type="file" id={`cam-${qIdx}`} style={{display:'none'}} accept="image/*" multiple capture="environment" onChange={(e) => handleAddPhoto(qIdx, e.target.files)} />
 
               {currentFiles.length > 0 && (
                   <div className="img-grid">
@@ -434,52 +454,33 @@ const InspectorApp = () => {
                   </div>
               )}
               
-              <textarea className="note-input" placeholder="أضف ملاحظاتك هنا..." rows="1" onChange={(e) => handleAnswerChange(qIdx, 'note', e.target.value)} />
+              <textarea className="note-input" placeholder="ملاحظات..." rows="1" onChange={(e) => handleAnswerChange(qIdx, 'note', e.target.value)} />
             </div>
           )
         })}
 
-        {/* --- تم تغيير العنوان إلى "تعهد" هنا --- */}
+        {/* Warning */}
         <div className="premium-card warning-card" ref={warningRef}>
-            <div className="warning-title">
-                <i className="fa-solid fa-triangle-exclamation fa-beat" style={{color:'#ef4444'}}></i>
-                تعهد
-            </div>
-            <div className="warning-text">
-                نؤكد بشكل قاطع أن دورك كمهندس مشرف لا يقتصر على رصد الملاحظات وإعداد التقارير فقط، بل يشمل المتابعة المباشرة والفعلية للأخطاء التي تم رصدها، والتأكد من تصحيحها فورًا، واتخاذ الإجراءات اللازمة لضمان عدم تكرارها مستقبلًا، مع تحمل المسؤولية النظامية كاملة حيال أي تقصير في ذلك.
-            </div>
+            <div className="warning-title"><i className="fa-solid fa-triangle-exclamation"></i>تعهد</div>
+            <div className="warning-text">نؤكد بشكل قاطع أن دورك كمهندس مشرف يشمل المتابعة المباشرة وتصحيح الأخطاء فوراً.</div>
             <label className="ack-label">
-                <input 
-                    type="checkbox" 
-                    className="ack-checkbox"
-                    checked={isAcknowledged}
-                    onChange={(e) => setIsAcknowledged(e.target.checked)}
-                />
+                <input type="checkbox" className="ack-checkbox" checked={isAcknowledged} onChange={(e) => setIsAcknowledged(e.target.checked)} />
                 <span className="ack-text-label">أقر بأنني قرأت وفهمت وألتزم بما ورد أعلاه</span>
             </label>
         </div>
-        {/* -------------------------------------- */}
 
+        {/* Signature */}
         <div className="premium-card" ref={sigContainerRef}>
-          <div className="section-title">
-            <i className="fa-solid fa-file-signature"></i>
-            توقيع المستلم <span style={{color:'red', fontSize:'12px', marginRight:'5px'}}>(إجباري)</span>
-          </div>
-          <div className="sig-wrapper" style={{border: '2px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden'}}>
+          <div className="section-title">توقيع المستلم</div>
+          <div className="sig-wrapper" style={{border: '2px solid #e2e8f0', borderRadius: '12px'}}>
             <SignatureCanvas ref={sigPad} canvasProps={{ className: 'sig-canvas' }} backgroundColor="rgb(255, 255, 255)" />
           </div>
-          <button onClick={() => sigPad.current.clear()} style={{marginTop:'10px', color:'#ef4444', background:'none', border:'none', fontWeight:'bold', cursor:'pointer'}}><i className="fa-solid fa-eraser"></i> مسح التوقيع</button>
+          <button onClick={() => sigPad.current.clear()} style={{marginTop:'10px', color:'#ef4444', background:'none', border:'none', fontWeight:'bold'}}>مسح التوقيع</button>
         </div>
       </div>
 
       <div className="floating-footer">
-        {/* الزر الآن يتأثر بحالة التعهد */}
-        <button 
-            className="submit-main-btn" 
-            onClick={handleSubmit} 
-            disabled={loading || !isAcknowledged} 
-            title={!isAcknowledged ? "يجب الموافقة على التعهد أعلاه أولاً" : ""}
-        >
+        <button className="submit-main-btn" onClick={handleSubmit} disabled={loading || !isAcknowledged}>
             {loading ? <i className="fa-solid fa-spinner fa-spin"></i> : <i className="fa-regular fa-paper-plane"></i>} {btnText}
         </button>
       </div>
